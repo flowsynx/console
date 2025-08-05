@@ -1,0 +1,70 @@
+﻿@using Console.Settings
+@inherits LayoutComponentBase
+@inject IPreferenceManager PreferenceManager
+
+<MudThemeProvider Theme="@Theme.ConsoleTheme" IsDarkMode="@IsDarkMode" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="25">
+        <MudText Typo="Typo.h6">FlowSynx Console</MudText>
+        <MudToolBar DisableGutters="true">
+            <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" OnClick="DrawerToggle" Class="ml-3" />
+        </MudToolBar>
+        <MudSpacer />
+        <MudTooltip Text="Dark Mode">
+            <MudSwitch Label="Dark" @bind-value="IsDarkMode" />
+        </MudTooltip>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="25" ClipMode="DrawerClipMode.Always">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = false;
+    private bool _initialized = false;
+
+    private async void DrawerToggle()
+    {
+        _drawerOpen = await PreferenceManager.ChangeDrawerStateAsync();
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _isDarkMode = await PreferenceManager.IsDarkTheme();
+            _drawerOpen = await PreferenceManager.IsDrawerOpenAsync();
+            _initialized = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnThemeChanged(bool value)
+    {
+        await PreferenceManager.ToggleDarkModeAsync();
+    }
+
+    private bool IsDarkMode
+    {
+        get => _isDarkMode;
+        set
+        {
+            if (_isDarkMode != value)
+            {
+                _isDarkMode = value;
+                _ = OnThemeChanged(value);
+            }
+        }
+    }
+}
