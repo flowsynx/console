@@ -6,32 +6,54 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor;
 using MudBlazor.Services;
 
-var builder = WebAssemblyHostBuilder.CreateDefault(args);
-builder.AddRootComponents();
+WebAssemblyHost? app = null;
 
-var configuration = new ConfigurationBuilder()
-    .AddCommandLine(args)
-    .Build();
+try
+{
+    var builder = WebAssemblyHostBuilder.CreateDefault(args);
+    builder.AddRootComponents();
 
-var cliArguments = configuration.BindCliArguments();
+    var configuration = new ConfigurationBuilder()
+        .AddCommandLine(args)
+        .Build();
 
-builder.Services
-        .AddBlazoredLocalStorage()
-        .AddMudServices(configuration =>
-        {
-            configuration.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
-            configuration.SnackbarConfiguration.HideTransitionDuration = 100;
-            configuration.SnackbarConfiguration.ShowTransitionDuration = 100;
-            configuration.SnackbarConfiguration.VisibleStateDuration = 3000;
-            configuration.SnackbarConfiguration.ShowCloseIcon = false;
-        })
-        .AddScoped<IPreferenceManager, PreferenceManager>()
-        .AddFlowSynxClient(opt =>
-        {
-            if (!string.IsNullOrEmpty(cliArguments.Address))
-                opt.BaseUrl = cliArguments.Address;
-        });
+    var cliArguments = configuration.BindCliArguments();
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+    builder.Services
+            .AddBlazoredLocalStorage()
+            .AddMudServices(configuration =>
+            {
+                configuration.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
+                configuration.SnackbarConfiguration.HideTransitionDuration = 500;
+                configuration.SnackbarConfiguration.ShowTransitionDuration = 500;
+                configuration.SnackbarConfiguration.VisibleStateDuration = 10000;
+                configuration.SnackbarConfiguration.PreventDuplicates = false;
+                configuration.SnackbarConfiguration.NewestOnTop = false;
+                configuration.SnackbarConfiguration.ShowCloseIcon = true;
+                configuration.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
+            })
+            .AddScoped<IPreferenceManager, PreferenceManager>()
+            .AddFlowSynxClient(opt =>
+            {
+                if (!string.IsNullOrEmpty(cliArguments.Address))
+                    opt.BaseUrl = cliArguments.Address;
+            });
 
-await builder.Build().RunAsync();
+    builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+    app = builder.Build();
+
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    if (app != null)
+    {
+        var logger = app.Services.GetRequiredService<ILogger>();
+        logger.Log(LogLevel.Error, ex.Message);
+    }
+    else
+    {
+        System.Console.WriteLine(ex.Message);
+    }
+}

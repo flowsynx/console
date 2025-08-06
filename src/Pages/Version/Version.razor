@@ -30,30 +30,40 @@
 
     private async Task<TableData<VersionResponse>> LoadData(TableState state, CancellationToken cancellationToken)
     {
-        var response = new List<VersionResponse>();
-
-        var result = await FlowSynxClient.Version.GetVersion(cancellationToken);
-        if (result.StatusCode != 200)
-            SnackBar.Add("It seems there is an error occurred during processing the request.", Severity.Error);
-
-        var payload = result.Payload;
-        if (payload.Succeeded)
+        try
         {
-            response.Add(payload.Data);
-        }
-        else
-        {
-            foreach (var message in payload.Messages)
+            var result = await FlowSynxClient.Version.GetVersion(cancellationToken);
+
+            if (result.StatusCode != 200)
             {
-                SnackBar.Add(message, Severity.Error);
+                SnackBar.Add("Failed to load version: Bad response code.", Severity.Error);
+                return new TableData<VersionResponse> { Items = [], TotalItems = 0 };
             }
-        }
 
-        return new TableData<VersionResponse>
+            if (!result.Payload.Succeeded)
             {
-                Items = response,
-                TotalItems = response.Count()
-            };
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Plugin error:\n{errorMessage}", Severity.Error);
+                return new TableData<VersionResponse> { Items = [], TotalItems = 0 };
+            }
+
+            var version = result.Payload.Data;
+
+            return new TableData<VersionResponse>
+                {
+                    Items = new List<VersionResponse> { version },
+                    TotalItems = 1
+                };
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new TableData<VersionResponse>
+                {
+                    Items = [],
+                    TotalItems = 0
+                };
+        }
     }
 
     private async void OnSearch()
