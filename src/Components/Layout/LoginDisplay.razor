@@ -1,0 +1,37 @@
+﻿@inject NavigationManager Navigation
+
+<AuthorizeView>
+    <Authorized>
+        <MudMenu StartIcon="@Icons.Material.Filled.AccountCircle"
+                 Color="Color.Inherit"
+                 Variant="Variant.Text"
+                 Label="@context.User.Identity?.Name"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight"
+                 Class="ml-3">
+            <MudMenuItem OnClick="Logout">Log out</MudMenuItem>
+        </MudMenu>
+    </Authorized>
+
+    <NotAuthorized>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Inherit"
+                   OnClick="Login"
+                   StartIcon="@Icons.Material.Filled.Login"
+                   Class="ml-3">
+            Log in
+        </MudButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+    void Login()
+    {
+        Navigation.NavigateTo($"/account/login?returnUrl={Uri.EscapeDataString(Navigation.Uri)}", forceLoad: true);
+    }
+
+    void Logout()
+    {
+        Navigation.NavigateTo("/account/logout", forceLoad: true);
+    }
+}

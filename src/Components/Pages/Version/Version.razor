@@ -1,0 +1,72 @@
+﻿@page "/version"
+
+@attribute [Authorize]
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<PageTitle>FlowSynx Version</PageTitle>
+
+<HeaderTitle Title="Version" Description="Information about FlowSynx version and hosting machine" />
+
+<MudTable T="VersionResponse" ServerData="LoadData" Dense="true" Hover="true" Bordered="false" Striped="false" @ref="_table" LoadingProgressColor="Color.Primary">
+    <HeaderContent>
+        <MudTh>FlowSynx Version</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="FlowSynx"><b>@context.Version</b></MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+</MudTable>
+
+@code {
+    private MudTable<VersionResponse>? _table;
+
+    private async Task<TableData<VersionResponse>> LoadData(TableState state, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await FlowSynxClient.Version.GetVersion(cancellationToken);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to load version: Bad response code.", Severity.Error);
+                return new TableData<VersionResponse> { Items = [], TotalItems = 0 };
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Plugin error:\n{errorMessage}", Severity.Error);
+                return new TableData<VersionResponse> { Items = [], TotalItems = 0 };
+            }
+
+            var version = result.Payload.Data;
+
+            return new TableData<VersionResponse>
+                {
+                    Items = new List<VersionResponse> { version },
+                    TotalItems = 1
+                };
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new TableData<VersionResponse>
+                {
+                    Items = [],
+                    TotalItems = 0
+                };
+        }
+    }
+
+    private async void OnSearch()
+    {
+        if (_table != null)
+            await _table.ReloadServerData();
+    }
+}
