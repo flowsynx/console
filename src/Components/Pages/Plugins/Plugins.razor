@@ -1,5 +1,4 @@
 ﻿@page "/plugins"
-@using FlowSynx.Client
 @using FlowSynx.Client.Messages.Responses.Plugins
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
@@ -8,22 +7,22 @@
 @inject IAccessTokenProvider TokenProvider
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
+@inject IDialogService DialogService
 
 <PageTitle>FlowSynx Plugins</PageTitle>
 
 <HeaderTitle Title="Plugins list" Description="List of connectors supported by FlowSynx system" />
 
-<MudTable 
-    T="PluginsListResponse" 
-    ServerData="LoadData" 
-    Dense="true" 
-    Hover="true" 
-    Bordered="false" 
-    Striped="false" 
-    @ref="_table" LoadingProgressColor="Color.Primary">
+<MudTable T="PluginsListResponse"
+          ServerData="LoadData"
+          Dense="true"
+          Hover="true"
+          Bordered="false"
+          Striped="false"
+          @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
         <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Primary" Size="@Size.Small"
-        StartIcon="@Icons.Material.Filled.Add" class="mr-3">Install</MudButton>
+                   StartIcon="@Icons.Material.Filled.Add" class="mr-3" OnClick="InstallPlugin">Install</MudButton>
         <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
                    StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
     </ToolBarContent>
@@ -40,7 +39,10 @@
         <MudTd DataLabel="Actions">
             <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Primary" Size="@Size.Small" />
             <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="@Size.Small" />
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="@Size.Small" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                           Color="Color.Error" 
+                           Size="@Size.Small" 
+                           OnClick="@(() => UninstallPlugin(@context.Type, "1.1.0"))" />
         </MudTd>
     </RowTemplate>
     <NoRecordsContent>
@@ -111,5 +113,46 @@
         {
             await _table.ReloadServerData();
         }
+    }
+
+    private async Task InstallPlugin()
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.ExtraExtraLarge,
+                BackdropClick = true,
+                CloseOnEscapeKey = true,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters { };
+
+        var dialog = await DialogService.ShowAsync<InstallPluginDialog>("Install new plugin", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private async Task UninstallPlugin(string type, string version)
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            BackdropClick = true,
+            CloseOnEscapeKey = true,
+            BackgroundClass = "blur-dialog-background"
+        };
+
+        var parameters = new DialogParameters {
+            { "PluginType", type },
+            { "PluginVersion", version }
+        };
+
+        var dialog = await DialogService.ShowAsync<UninstallPluginDialog>("Uninstall plugin", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
     }
 }

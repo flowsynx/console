@@ -1,0 +1,51 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" /> Uninstall plugin
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>
+            <strong>Are you sure you want to uninstall this plugin?</strong>
+            <br /><br />
+            <strong>Type:</strong> @PluginType
+            <br />
+            <strong>Version:</strong> @PluginVersion
+            <br /><br />
+            <MudCard Outlined="true" Class="pa-3 mx-auto" Style="border: 1px solid #ffa000; background-color: #fff8e1;">
+                <MudStack Direction="Row" Spacing="1">
+                    <MudIcon Color="Color.Warning" Icon="@Icons.Material.Filled.Warning" />
+                    <MudText Color="Color.Warning" Typo="Typo.subtitle1" Bold="true">
+                        Uninstalling will remove all associated data and settings,<br />
+                        and you may lose any custom configurations.
+                    </MudText>
+                </MudStack>
+            </MudCard>
+
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" 
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default"
+                   OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" 
+                   StartIcon="Icons.Material.Filled.Delete"
+                   Variant="Variant.Filled" 
+                   OnClick="Delete">Uninstall</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string PluginType { get; set; } = "";
+
+    [Parameter]
+    public string PluginVersion { get; set; } = "";
+
+    private void Delete() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Cancel();
+}
