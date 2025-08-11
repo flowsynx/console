@@ -1,4 +1,5 @@
-﻿@using MudBlazor
+﻿@using FlowSynx.Client.Messages.Requests.Plugins
+@using MudBlazor
 
 @attribute [Authorize]
 @inject IAccessTokenProvider TokenProvider
@@ -34,10 +35,17 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Close"
-                   Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
-        <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save"
-                   Color="Color.Primary" OnClick="Save">Save</MudButton>
+        <MudButton DisableElevation Variant="Variant.Text" 
+                                    StartIcon="@Icons.Material.Filled.Close"
+                                    Color="Color.Default"
+                                    Disabled="@IsProcessing"
+                                    OnClick="Cancel">Cancel</MudButton>
+
+        <MudButton DisableElevation Variant="Variant.Filled" 
+                                    StartIcon="@Icons.Material.Filled.Save"
+                                    Color="Color.Primary" 
+                                    Disabled="@IsProcessing"
+                                    OnClick="Install">@(IsProcessing ? "Processing..." : "Install")</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -45,19 +53,31 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public FlowSynx.Client.Messages.Requests.Plugins.InstallPluginRequest InstallPluginRequest { get; set; }
-        = new() { Type = string.Empty, Version = string.Empty };
+    private bool IsProcessing = false;
+    private InstallPluginRequest InstallPluginRequest = new() { Type = string.Empty, Version = string.Empty };
 
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
-    private async Task Save()
+    private void BackdropHandler(MouseEventArgs e)
+    {
+        if (!IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private async Task Install()
     {
         try
         {
+            IsProcessing = true;
             string? token;
             var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
 
@@ -85,13 +105,17 @@
             }
             else
             {
-                SnackBar.Add("Config added successfully!", Severity.Success);
+                SnackBar.Add("Plugin installed successfully!", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
         }
         catch (Exception ex)
         {
             SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
         }
     }
 }

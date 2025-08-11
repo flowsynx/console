@@ -1,7 +1,14 @@
-﻿<MudDialog>
+﻿@using FlowSynx.Client.Messages.Requests.Plugins
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" /> Uninstall plugin
+            <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Class="mr-3 mb-n1" /> Uninstall plugin
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -12,14 +19,10 @@
             <br />
             <strong>Version:</strong> @PluginVersion
             <br /><br />
-            <MudCard Outlined="true" Class="pa-3 mx-auto" Style="border: 1px solid #ffa000; background-color: #fff8e1;">
-                <MudStack Direction="Row" Spacing="1">
-                    <MudIcon Color="Color.Warning" Icon="@Icons.Material.Filled.Warning" />
-                    <MudText Color="Color.Warning" Typo="Typo.subtitle1" Bold="true">
-                        Uninstalling will remove all associated data and settings,<br />
-                        and you may lose any custom configurations.
-                    </MudText>
-                </MudStack>
+            <MudCard Outlined="true" Class="pa-3 mx-auto">
+                <MudText Color="Color.Warning" Typo="Typo.subtitle2" Bold="true">
+                    ⚠️ Warning: Uninstalling this plugin will permanently delete all related data and settings. Additionally, any custom configurations tied to this plugin will become invalid and unusable. As a result, any workflows depending on these invalid configurations or on this plugin directly will fail to execute properly. Please ensure you have backed up any important information before proceeding.
+                </MudText>
             </MudCard>
 
         </MudText>
@@ -28,11 +31,14 @@
         <MudButton Variant="Variant.Text" 
                    StartIcon="@Icons.Material.Filled.Close"
                    Color="Color.Default"
+                   Disabled="@IsProcessing"
                    OnClick="Cancel">Cancel</MudButton>
+
         <MudButton Color="Color.Error" 
-                   StartIcon="Icons.Material.Filled.Delete"
+                   StartIcon="@Icons.Material.Filled.DeleteForever"
                    Variant="Variant.Filled" 
-                   OnClick="Delete">Uninstall</MudButton>
+                   Disabled="@IsProcessing"
+                   OnClick="Uninstall">@(IsProcessing ? "Processing..." : "Uninstall")</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -46,6 +52,69 @@
     [Parameter]
     public string PluginVersion { get; set; } = "";
 
-    private void Delete() => MudDialog.Close(DialogResult.Ok(true));
+    private bool IsProcessing = false;
+
     private void Cancel() => MudDialog.Cancel();
+
+    private void BackdropHandler(MouseEventArgs e)
+    {
+        if (!IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private async Task Uninstall()
+    {
+        try
+        {
+            IsProcessing = true;
+            string? token;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            var unInstallPluginRequest = new UninstallPluginRequest() { 
+                Type = PluginType, 
+                Version = PluginVersion
+            };
+            var result = await FlowSynxClient.Plugins.UninstallAsync(unInstallPluginRequest);
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while processing the request.", Severity.Error);
+                return;
+            }
+
+            var payload = result.Payload;
+            if (!payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
+                SnackBar.Add($"Uninstall plugin error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+            else
+            {
+                SnackBar.Add("Plugin uninstalled successfully!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
 }
