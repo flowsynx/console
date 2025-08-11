@@ -30,19 +30,27 @@
         <MudTh>Id</MudTh>
         <MudTh>Type</MudTh>
         <MudTh>Description</MudTh>
-        <MudTh>Actions</MudTh>
+        <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Id">@context.Id</MudTd>
         <MudTd DataLabel="Name"><b>@context.Type</b></MudTd>
         <MudTd DataLabel="Type">@context.Description</MudTd>
-        <MudTd DataLabel="Actions">
-            <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Primary" Size="@Size.Small" />
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="@Size.Small" />
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                           Color="Color.Error" 
-                           Size="@Size.Small" 
-                           OnClick="@(() => UninstallPlugin(@context.Type, "1.1.0"))" />
+        <MudTd DataLabel="Actions" Style="padding: 0px;">
+            <MudToolBar Elevation="25" Dense="true">
+                <MudIconButton Icon="@Icons.Material.Outlined.Info" 
+                               Color="Color.Primary" 
+                               Size="@Size.Small" />
+
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                               Color="Color.Primary" 
+                               Size="@Size.Small" />
+
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                               Color="Color.Error" 
+                               Size="@Size.Small" 
+                               OnClick="@(() => UninstallPlugin(@context.Type, "1.1.0"))" />
+            </MudToolBar>
         </MudTd>
     </RowTemplate>
     <NoRecordsContent>
@@ -119,10 +127,10 @@
     {
         var options = new DialogOptions
             {
-                CloseButton = true,
+                CloseButton = false,
                 MaxWidth = MaxWidth.ExtraExtraLarge,
-                BackdropClick = true,
-                CloseOnEscapeKey = true,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
                 BackgroundClass = "blur-dialog-background"
             };
 
@@ -138,8 +146,8 @@
     {
         var options = new DialogOptions
         {
-            CloseButton = true,
-            MaxWidth = MaxWidth.Medium,
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
             BackdropClick = true,
             CloseOnEscapeKey = true,
             BackgroundClass = "blur-dialog-background"
