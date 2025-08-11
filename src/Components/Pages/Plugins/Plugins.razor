@@ -40,11 +40,13 @@
             <MudToolBar Elevation="25" Dense="true">
                 <MudIconButton Icon="@Icons.Material.Outlined.Info" 
                                Color="Color.Primary" 
-                               Size="@Size.Small" />
+                               Size="@Size.Small"
+                               OnClick="@(() => PluginDetails(context.Id))" />
 
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                Color="Color.Primary" 
-                               Size="@Size.Small" />
+                               Size="@Size.Small" 
+                               OnClick="@(() => UpdatePlugin(@context.Type, "1.1.0"))" />
 
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                Color="Color.Error" 
@@ -159,6 +161,49 @@
         };
 
         var dialog = await DialogService.ShowAsync<UninstallPluginDialog>("Uninstall plugin", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+        private async Task UpdatePlugin(string type, string currentVersion)
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            BackdropClick = true,
+            CloseOnEscapeKey = true,
+            BackgroundClass = "blur-dialog-background"
+        };
+
+        var parameters = new DialogParameters {
+            { "PluginType", type },
+            { "CurrentPluginVersion", currentVersion }
+        };
+
+        var dialog = await DialogService.ShowAsync<UpdatePluginDialog>("Update plugin", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private async Task PluginDetails(Guid id)
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = true,
+                CloseOnEscapeKey = true,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "Id", id }
+        };
+
+        var dialog = await DialogService.ShowAsync<PluginDetailsDialog>("Plugin details", parameters, options);
         var dialogResult = await dialog.Result;
         if (dialogResult != null && !dialogResult.Canceled)
             await Refresh();
