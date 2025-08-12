@@ -1,0 +1,339 @@
+﻿@using FlowSynx.Client.Messages.Requests.PluginConfig
+@using FlowSynx.Client.Messages.Requests.Plugins
+@using FlowSynx.Client.Messages.Responses.PluginConfig
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using MudBlazor
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Update" Class="mr-3 mb-n1" /> Add plugin config
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField For="@(() => UpdatePluginConfigRequest.Name)"
+                              @bind-Value="UpdatePluginConfigRequest.Name"
+                              Label="Plugin config name"
+                              Required="true"
+                              Variant="Variant.Text"
+                              Margin="Margin.Dense"
+                              HelperText="Enter the type of the plugin" />
+            </MudItem>
+            <MudItem xs="12" md="12">
+                <MudSelect T="string"
+                           Label="Plugin Type"
+                           For="@(() => UpdatePluginConfigRequest.Type)"
+                           @bind-Value="UpdatePluginConfigRequest.Type"
+                           Variant="Variant.Text"
+                           Margin="Margin.Dense"
+                           Clearable="false"
+                           OpenIcon="@Icons.Material.Filled.ArrowDropDown"
+                           CloseIcon="@Icons.Material.Filled.ArrowDropUp"
+                           HelperText="Enter the type of plugin item">
+                    @foreach (var plugin in PluginTypes)
+                    {
+                        <MudSelectItem Value="plugin.Type">@plugin.Type</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField For="@(() => UpdatePluginConfigRequest.Version)"
+                @bind-Value="UpdatePluginConfigRequest.Version"
+                Label="Plugin version"
+                Required="true"
+                Variant="Variant.Text"
+                Margin="Margin.Dense"
+                HelperText="Enter the version of the plugin" />
+            </MudItem>
+            <MudItem xs="12" md="12">
+                <MudText Typo="Typo.h6" Color="Color.Primary">Specifications</MudText>
+                <MudTable Items="_specifications" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                    <ToolBarContent>
+                        <MudButton DisableElevation
+                        Variant="Variant.Outlined"
+                        Color="Color.Primary"
+                        Size="@Size.Small"
+                        StartIcon="@Icons.Material.Filled.Add"
+                        OnClick="AddSpecification">Add item</MudButton>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Key</MudTh>
+                        <MudTh>Value</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudTextField For="@(() => context.Key)"
+                            @bind-Value="context.Key"
+                            Variant="Variant.Text"
+                            Margin="Margin.Dense" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField For="@(() => context.Value)"
+                            @bind-Value="context.Value"
+                            Variant="Variant.Text"
+                            Margin="Margin.Dense" />
+                        </MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                            Variant="Variant.Filled"
+                            Color="Color.Error"
+                            Size="Size.Small"
+                            OnClick="@(() => DeleteSpecification(context.Id))"></MudIconButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton DisableElevation Variant="Variant.Text"
+        StartIcon="@Icons.Material.Filled.Close"
+        Color="Color.Default"
+        Disabled="@IsProcessing"
+        OnClick="Cancel">Cancel</MudButton>
+
+        <MudButton DisableElevation Variant="Variant.Filled"
+        StartIcon="@Icons.Material.Filled.Save"
+        Color="Color.Primary"
+        Disabled="@IsProcessing"
+        OnClick="Update">@(IsProcessing ? "Updating..." : "Update")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public Guid Id { get; set; } = Guid.Empty;
+
+    private bool IsProcessing = false;
+    private List<TempKeyValue> _specifications = new List<TempKeyValue>();
+    private IEnumerable<PluginsListResponse> PluginTypes = new List<PluginsListResponse>();
+    private UpdatePluginConfigRequest UpdatePluginConfigRequest = new()
+        {
+        Id = Guid.Empty,
+        Name = string.Empty,
+        Type = string.Empty,
+        Version = string.Empty
+    };
+
+    override protected async Task OnInitializedAsync()
+    {
+        PluginTypes = await LoadPluginTypes(CancellationToken.None);
+        await GetDetails();
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void BackdropHandler(MouseEventArgs e)
+    {
+        if (!IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    void AddSpecification()
+    {
+        _specifications.Add(new TempKeyValue(){Id = Guid.NewGuid()});
+    }
+
+    void DeleteSpecification(Guid id)
+    {
+        var item = _specifications.FirstOrDefault(x => x.Id == id);
+        if (item != null)
+            _specifications.Remove(item);
+    }
+
+    private async Task GetDetails()
+    {
+        try
+        {
+            IsProcessing = true;
+            string? token;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            var unInstallPluginRequest = new PluginConfigDetailsRequest()
+            {
+                Id = Id
+            };
+            var result = await FlowSynxClient.PluginConfig.DetailsAsync(unInstallPluginRequest);
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while processing the request.", Severity.Error);
+                return;
+            }
+
+            var payload = result.Payload;
+            if (!payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
+                SnackBar.Add($"Update plugin config error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+            else
+            {
+                UpdatePluginConfigRequest = new UpdatePluginConfigRequest
+                {
+                    Id = payload.Data.Id,
+                    Name = payload.Data.Name,
+                    Type = payload.Data.Type,
+                    Version = "1.1.0"
+                };
+
+                if (payload.Data.Specifications == null)
+                {
+                    _specifications = new List<TempKeyValue>();
+                }
+                else 
+                {
+                _specifications = payload.Data.Specifications.Select(spec => new TempKeyValue
+                    {
+                        Id = Guid.NewGuid(),
+                        Key = spec.Key,
+                        Value = spec.Value
+                    }).ToList();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private async Task<IEnumerable<PluginsListResponse>> LoadPluginTypes(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+            string? token;
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var result = await FlowSynxClient.Plugins.ListAsync(cancellationToken);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to load plugins: Bad response code.", Severity.Error);
+                return new List<PluginsListResponse>();
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Plugin error:\n{errorMessage}", Severity.Error);
+                return new List<PluginsListResponse>();
+            }
+
+            return result.Payload.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new List<PluginsListResponse>();
+        }
+    }
+
+    private async Task Update()
+    {
+        try
+        {
+            IsProcessing = true;
+            string? token;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            if (_specifications.Any())
+            {
+                Dictionary<string, object?> objDict = new Dictionary<string, object?>();
+                foreach (var item in _specifications)
+                {
+                    if (!objDict.ContainsKey(item.Key))
+                        objDict.Add(item.Key, item.Value);
+                }
+            
+                UpdatePluginConfigRequest.Specifications = objDict;
+            }
+            else
+            {
+                UpdatePluginConfigRequest.Specifications = null;
+            }
+
+            var result = await FlowSynxClient.PluginConfig.UpdateAsync(UpdatePluginConfigRequest);
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while processing the request.", Severity.Error);
+                return;
+            }
+
+            var payload = result.Payload;
+            if (!payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
+                SnackBar.Add($"Update plugin error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+            else
+            {
+                SnackBar.Add("Plugin updated successfully!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private class TempKeyValue
+    {
+        public Guid Id { get; set; }
+        public string Key { get; set; } = string.Empty;
+        public string? Value { get; set; }
+    }
+}

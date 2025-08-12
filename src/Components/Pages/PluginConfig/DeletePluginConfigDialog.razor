@@ -1,0 +1,127 @@
+﻿@using FlowSynx.Client.Messages.Requests.PluginConfig
+@using FlowSynx.Client.Messages.Requests.Plugins
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Class="mr-3 mb-n1" /> Delete plugin configuration
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>
+            <strong>Are you sure you want to delete this plugin configuration?</strong>
+            <br /><br />
+            <strong>Config name:</strong> @ConfigName
+            <br />
+            <strong>Plugin type:</strong> @PluginType
+            <br />
+            <strong>Plugin version:</strong> @PluginVersion
+            <br /><br />
+            <MudCard Outlined="true" Class="pa-3 mx-auto">
+                <MudText Color="Color.Warning" Typo="Typo.subtitle2">
+                    ⚠️ Warning: Deleting this plugin configuration will permanently delete all related data and settings. Any workflows depending on these configuration will fail to execute properly. Please ensure you have backed up any important information before proceeding.
+                </MudText>
+            </MudCard>
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" 
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default"
+                   Disabled="@IsProcessing"
+                   OnClick="Cancel">Cancel</MudButton>
+
+        <MudButton Color="Color.Error" 
+                   StartIcon="@Icons.Material.Filled.DeleteForever"
+                   Variant="Variant.Filled" 
+                   Disabled="@IsProcessing"
+                   OnClick="Delete">@(IsProcessing ? "Deleting..." : "Delete")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public Guid Id { get; set; } = Guid.Empty;
+
+    [Parameter]
+    public string ConfigName { get; set; } = "";
+
+    [Parameter]
+    public string PluginType { get; set; } = "";
+
+    [Parameter]
+    public string PluginVersion { get; set; } = "";
+
+    private bool IsProcessing = false;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void BackdropHandler(MouseEventArgs e)
+    {
+        if (!IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private async Task Delete()
+    {
+        try
+        {
+            IsProcessing = true;
+            string? token;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            var deletePluginConfigRequest = new DeletePluginConfigRequest() { 
+                Id = Id
+            };
+            var result = await FlowSynxClient.PluginConfig.DeleteAsync(deletePluginConfigRequest);
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while processing the request.", Severity.Error);
+                return;
+            }
+
+            var payload = result.Payload;
+            if (!payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
+                SnackBar.Add($"Delete plugin config error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+            else
+            {
+                SnackBar.Add("Plugin config delete successfully!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+}

@@ -1,0 +1,137 @@
+﻿@using FlowSynx.Client.Messages.Requests.PluginConfig
+@using FlowSynx.Client.Messages.Requests.Plugins
+@using FlowSynx.Client.Messages.Responses.PluginConfig
+@using FlowSynx.Client.Messages.Responses.Plugins
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-3 mb-n1" /> Plugin configuration details
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            @if (pluginConfigDetailsResponse != null)
+            {
+                <MudItem xs="12" md="12">
+                    <MudText>
+                        <strong>Config name:</strong> @pluginConfigDetailsResponse.Name
+                        <br />
+                        <strong>Config type:</strong> @pluginConfigDetailsResponse.Type
+                    </MudText>
+                </MudItem>
+                @if (pluginConfigDetailsResponse.Specifications != null && pluginConfigDetailsResponse.Specifications.Count > 0)
+                {
+                    <MudItem xs="12" md="12">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Specifications</MudText>
+                        <MudTable T="KeyValuePair<string, string>"
+                                  Items="pluginConfigDetailsResponse.Specifications"
+                                  Hover="true"
+                                  Breakpoint="Breakpoint.Sm"
+                                  Dense="true">
+                            <HeaderContent>
+                                <MudTh><b>Key</b></MudTh>
+                                <MudTh><b>Type</b></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Key</MudTd>
+                                <MudTd>@(context.Value)</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudItem>
+                }
+            }
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default"
+                   Disabled="@IsProcessing"
+                   OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public Guid Id { get; set; } = Guid.Empty;
+
+    private bool IsProcessing = false;
+    private PluginConfigDetailsResponse pluginConfigDetailsResponse = default!;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void BackdropHandler(MouseEventArgs e)
+    {
+        if (!IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetDetails();
+    }
+
+    private async Task GetDetails()
+    {
+        try
+        {
+            IsProcessing = true;
+            string? token;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            var unInstallPluginRequest = new PluginConfigDetailsRequest()
+            {
+                Id = Id
+            };
+            var result = await FlowSynxClient.PluginConfig.DetailsAsync(unInstallPluginRequest);
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while processing the request.", Severity.Error);
+                return;
+            }
+
+            var payload = result.Payload;
+            if (!payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
+                SnackBar.Add($"Uninstall plugin error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+            else
+            {
+                pluginConfigDetailsResponse = payload.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+}

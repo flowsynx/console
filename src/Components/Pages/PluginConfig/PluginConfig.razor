@@ -1,0 +1,215 @@
+﻿@page "/pluginconfig"
+@using FlowSynx.Client.Messages.Responses.PluginConfig
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+@inject IDialogService DialogService
+
+<PageTitle>FlowSynx Plugins</PageTitle>
+
+<HeaderTitle Title="Plugin config" Description="This section outlines all plugin configurations currently registered within the FlowSynx environment. Each configuration defines how a specific plugin operates, including connection details, authentication credentials, runtime parameters, and behavior settings." />
+
+<MudTable T="PluginConfigListResponse"
+          ServerData="LoadData"
+          Dense="true"
+          Hover="true"
+          Bordered="false"
+          Striped="false"
+          @ref="_table" LoadingProgressColor="Color.Primary">
+    <ToolBarContent>
+        <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add" class="mr-3" OnClick="AddPluginConfig">Add config</MudButton>
+        <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Name</MudTd>
+        <MudTd DataLabel="Name"><b>@context.Type</b></MudTd>
+        <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
+            <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
+                <MudIconButton Icon="@Icons.Material.Outlined.Info" 
+                               Color="Color.Primary" 
+                               Size="@Size.Small"
+                               OnClick="@(() => PluginConfigDetails(context.Id))" />
+
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                               Color="Color.Primary" 
+                               Size="@Size.Small" 
+                               OnClick="@(() => UpdatePluginConfig(@context.Id))" />
+
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                               Color="Color.Error" 
+                               Size="@Size.Small" 
+                               OnClick="@(() => DeletePluginConfig(@context.Id, context.Name, @context.Type, "1.1.0"))" />
+            </MudToolBar>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private string? token;
+    private MudTable<PluginConfigListResponse>? _table;
+
+    private async Task<TableData<PluginConfigListResponse>> LoadData(TableState state, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var result = await FlowSynxClient.PluginConfig.ListAsync(cancellationToken);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to load plugins: Bad response code.", Severity.Error);
+                return new TableData<PluginConfigListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Plugin config error:\n{errorMessage}", Severity.Error);
+                return new TableData<PluginConfigListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            var pluginconfigs = result.Payload.Data.ToList();
+
+            return new TableData<PluginConfigListResponse>
+                {
+                    Items = pluginconfigs,
+                    TotalItems = pluginconfigs.Count
+                };
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new TableData<PluginConfigListResponse>
+                {
+                    Items = [],
+                    TotalItems = 0
+                };
+        }
+    }
+
+    private async Task Refresh()
+    {
+        if (_table != null)
+        {
+            await _table.ReloadServerData();
+        }
+    }
+
+    private async Task AddPluginConfig()
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters { };
+
+        var dialog = await DialogService.ShowAsync<AddPluginConfigDialog>("Add new plugin configuration", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private async Task DeletePluginConfig(
+        Guid id, 
+        string configName, 
+        string type, 
+        string version)
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            BackdropClick = true,
+            CloseOnEscapeKey = true,
+            BackgroundClass = "blur-dialog-background"
+        };
+
+        var parameters = new DialogParameters {
+            { "Id", id },
+            { "ConfigName", configName },
+            { "PluginType", type },
+            { "PluginVersion", version }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeletePluginConfigDialog>("Delete plugin configuration", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private async Task UpdatePluginConfig(Guid id)
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            BackdropClick = true,
+            CloseOnEscapeKey = true,
+            BackgroundClass = "blur-dialog-background"
+        };
+
+        var parameters = new DialogParameters {
+            { "Id", id }
+        };
+
+        var dialog = await DialogService.ShowAsync<UpdatePluginConfigDialog>("Update plugin configuration", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private async Task PluginConfigDetails(Guid id)
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = true,
+                CloseOnEscapeKey = true,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "Id", id }
+        };
+
+        var dialog = await DialogService.ShowAsync<PluginConfigDetailsDialog>("Plugin configuration details", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+}
