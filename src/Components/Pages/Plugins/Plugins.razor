@@ -11,7 +11,7 @@
 
 <PageTitle>FlowSynx Plugins</PageTitle>
 
-<HeaderTitle Title="Plugins list" Description="List of connectors supported by FlowSynx system" />
+<HeaderTitle Title="Installed plugins" Description="This section enumerates all plugins currently installed and available within the FlowSynx system. Each entry includes the plugin name, version, type, and a brief description of its functionality. " />
 
 <MudTable T="PluginsListResponse"
           ServerData="LoadData"
@@ -21,23 +21,21 @@
           Striped="false"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
-        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Primary" Size="@Size.Small"
+        <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="@Size.Small"
                    StartIcon="@Icons.Material.Filled.Add" class="mr-3" OnClick="InstallPlugin">Install</MudButton>
         <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
                    StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
     </ToolBarContent>
     <HeaderContent>
-        <MudTh>Id</MudTh>
         <MudTh>Type</MudTh>
         <MudTh>Description</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Id">@context.Id</MudTd>
         <MudTd DataLabel="Name"><b>@context.Type</b></MudTd>
         <MudTd DataLabel="Type">@context.Description</MudTd>
-        <MudTd DataLabel="Actions" Style="padding: 0px;">
-            <MudToolBar Elevation="25" Dense="true">
+        <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
+            <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
                 <MudIconButton Icon="@Icons.Material.Outlined.Info" 
                                Color="Color.Primary" 
                                Size="@Size.Small"
@@ -130,7 +128,7 @@
         var options = new DialogOptions
             {
                 CloseButton = false,
-                MaxWidth = MaxWidth.ExtraExtraLarge,
+                MaxWidth = MaxWidth.Small,
                 BackdropClick = false,
                 CloseOnEscapeKey = false,
                 BackgroundClass = "blur-dialog-background"
@@ -172,8 +170,8 @@
         {
             CloseButton = false,
             MaxWidth = MaxWidth.Small,
-            BackdropClick = true,
-            CloseOnEscapeKey = true,
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
             BackgroundClass = "blur-dialog-background"
         };
 
