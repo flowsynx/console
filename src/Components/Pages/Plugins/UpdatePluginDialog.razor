@@ -9,7 +9,7 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" /> Install plugin
+            <MudIcon Icon="@Icons.Material.Filled.Update" Class="mr-3 mb-n1" /> Update plugin
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -54,7 +54,7 @@
                                     StartIcon="@Icons.Material.Filled.Save"
                                     Color="Color.Primary" 
                                     Disabled="@IsProcessing"
-                                    OnClick="Update">@(IsProcessing ? "Processing..." : "Update")</MudButton>
+                                    OnClick="Update">@(IsProcessing ? "Updating..." : "Update")</MudButton>
     </DialogActions>
 </MudDialog>
 

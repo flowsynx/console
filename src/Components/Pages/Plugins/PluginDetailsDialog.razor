@@ -116,7 +116,7 @@
             if (!payload.Succeeded)
             {
                 var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Uninstall plugin error:\n{errorMessage}", Severity.Error);
+                SnackBar.Add($"Plugin details error:\n{errorMessage}", Severity.Error);
                 return;
             }
             else
