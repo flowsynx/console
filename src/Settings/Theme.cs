@@ -115,11 +115,13 @@ public static class Theme
         {
             Primary = new MudBlazor.Utilities.MudColor("#008b8b"),
             AppbarBackground = new MudBlazor.Utilities.MudColor("#008b8b"),
+            TextSecondary = new MudBlazor.Utilities.MudColor("#999999"),
         },
         PaletteDark = new PaletteDark
         {
             Primary = new MudBlazor.Utilities.MudColor("#40e0d0"),
             AppbarBackground = new MudBlazor.Utilities.MudColor("#40e0d0"),
+            TextSecondary = new MudBlazor.Utilities.MudColor("#BDBDBD"),
         },
         Typography = DefaultTypography,
         LayoutProperties = DefaultLayoutProperties

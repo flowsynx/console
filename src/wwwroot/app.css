@@ -62,3 +62,7 @@ h1:focus {
 .blur-dialog-background {
     backdrop-filter: blur(2px);
 }
+
+.gray-subtitle {
+    color: var(--mud-palette-text-secondary) !important;
+}
