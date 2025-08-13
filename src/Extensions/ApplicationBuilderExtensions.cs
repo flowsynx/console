@@ -1,4 +1,5 @@
-﻿using Console.Settings;
+﻿using Console.Middlewares;
+using Console.Settings;
 
 namespace Console.Extensions;
 
@@ -13,6 +14,12 @@ public static class ApplicationBuilderExtensions
             app.UseHttpsRedirection();
         }
 
+        return app;
+    }
+
+    public static IApplicationBuilder UseTokenExpiration(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<TokenExpirationMiddleware>();
         return app;
     }
 }

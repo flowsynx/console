@@ -57,7 +57,10 @@ public static class ServiceCollectionExtensions
                 options.DefaultScheme = CookieScheme;
                 options.DefaultChallengeScheme = OpenIdScheme;
             })
-            .AddCookie(CookieScheme)
+            .AddCookie(CookieScheme, options => {
+                options.ExpireTimeSpan = TimeSpan.FromDays(30);
+                options.SlidingExpiration = true;
+            })
             .AddOpenIdConnect(OpenIdScheme, options =>
             {
                 ConfigureOpenIdOptions(options, openIdConfig);
@@ -91,6 +94,7 @@ public static class ServiceCollectionExtensions
         options.ResponseType = "code";
         options.CallbackPath = config.RedirectUri;
         options.SaveTokens = true;
+        options.UseTokenLifetime = true;
         options.RequireHttpsMetadata = config.RequireHttps;
 
         options.Scope.Clear();
@@ -103,7 +107,19 @@ public static class ServiceCollectionExtensions
         {
             NameClaimType = "name"
         };
+        options.Events = new OpenIdConnectEvents
+        {
+            OnTokenValidated = ctx =>
+            {
+                var accessToken = ctx.TokenEndpointResponse?.AccessToken;
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    var identity = (System.Security.Claims.ClaimsIdentity)ctx.Principal!.Identity!;
+                    identity.AddClaim(new System.Security.Claims.Claim("access_token", accessToken));
+                }
+                return Task.CompletedTask;
+            }
+        };
     }
-
     #endregion
 }

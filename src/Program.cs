@@ -1,5 +1,6 @@
 using Console.Components;
 using Console.Extensions;
+using Console.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,7 @@ app.UseHttps();
 app.UseAntiforgery();
 
 app.UseAuthentication();
+app.UseTokenExpiration();
 app.UseAuthorization();
 
 app.MapStaticAssets();
