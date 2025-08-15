@@ -1,0 +1,16 @@
+﻿<MudTextField T="string"
+              @bind-Value="JsonContent"
+              Label="Workflow JSON"
+              Lines="20"
+              FullWidth="true"
+              Variant="Variant.Outlined"
+              Text="@JsonContent"
+              OnBlur="OnJsonChanged" />
+
+@code {
+    [Parameter] public string? JsonContent { get; set; }
+    [Parameter] public EventCallback<string> JsonContentChanged { get; set; }
+
+    private async Task OnJsonChanged(FocusEventArgs e) =>
+        await JsonContentChanged.InvokeAsync(JsonContent);
+}

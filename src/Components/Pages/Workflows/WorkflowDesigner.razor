@@ -1,0 +1,211 @@
+﻿@using Microsoft.AspNetCore.Components
+@implements IAsyncDisposable
+
+<div class="designer-root">
+    <!-- Palette -->
+    <div class="palette">
+        <MudText Typo="Typo.h6">Plugins</MudText>
+
+        <MudPaper Class="pa-2 mb-2">
+            <MudButton Variant="Variant.Outlined" OnClick="@(() => AddNodeTemplate("process"))">+ Process</MudButton>
+        </MudPaper>
+        <MudPaper Class="pa-2 mb-2">
+            <MudButton Variant="Variant.Outlined" OnClick="@(() => AddNodeTemplate("write"))">+ Write</MudButton>
+        </MudPaper>
+        <MudPaper Class="pa-2 mb-2">
+            <MudButton Variant="Variant.Outlined" OnClick="@(() => AddNodeTemplate("http"))">+ HTTP</MudButton>
+        </MudPaper>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-wrap">
+        <div id="drawflow" style="height:100%;"></div>
+    </div>
+
+    <!-- Properties -->
+    <div class="props">
+        <MudText Typo="Typo.h6">Properties</MudText>
+        @if (SelectedTask != null)
+        {
+            <MudTextField @bind-Value="SelectedTask.Name" Label="Name" Immediate="true" OnBlur="async _ => await UpdateNodeTitle()" />
+            <MudTextField @bind-Value="SelectedTask.Type" Label="Type" Immediate="true" Disabled="true" />
+            <MudTextField @bind-Value="_deps" Label="Dependencies (comma separated)" Immediate="true" OnBlur="UpdateDepsFromText" />
+
+            <MudDivider Class="my-2" />
+            <MudText Typo="Typo.subtitle1">Parameters</MudText>
+            @if (SelectedTask.Parameters == null || SelectedTask.Parameters.Count <= 0)
+            {
+                <MudText>No parameters defined</MudText>
+            }
+            else
+            {
+                @foreach (var kv in SelectedTask.Parameters.ToList())
+                {
+                    <MudGrid Class="mb-2">
+                        <MudItem xs="5">
+                            <MudTextField Value="@kv.Key" Disabled="true" />
+                        </MudItem>
+                        <MudItem xs="5">
+                            <MudTextField 
+                                T="string"
+                                Value="@kv.Value?.ToString()"
+                                ValueChanged="@(v => SetParam(kv.Key, v))" />
+                        </MudItem>
+                        <MudItem xs="2">
+                            <MudButton 
+                                Variant="Variant.Filled"
+                                StartIcon="@Icons.Material.Filled.Delete"
+                                Color="Color.Error" 
+                                OnClick="() => RemoveParam(kv.Key)">
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+                }
+            }
+            <MudGrid>
+                <MudItem xs="5"><MudTextField @bind-Value="_newKey" Placeholder="Key" /></MudItem>
+                <MudItem xs="5"><MudTextField @bind-Value="_newValue" Placeholder="Value" /></MudItem>
+                <MudItem xs="2">
+                    <MudButton 
+                        Size="@Size.Small" 
+                        Variant="Variant.Filled" 
+                        Color="@Color.Primary" 
+                        OnClick="AddParam">Add</MudButton>
+                    </MudItem>
+            </MudGrid>
+        }
+        else
+        {
+            <MudText>No selection</MudText>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public Workflow Workflow { get; set; }
+    [Parameter] public IJSRuntime JSRuntime { get; set; }
+
+    private WorkflowTask SelectedTask;
+    private string _deps;
+    private string _newKey;
+    private string _newValue;
+    private DotNetObjectReference<WorkflowDesigner> _selfRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("fsDrawflow.init", "drawflow", _selfRef);
+            await LoadWorkflowIntoCanvas();
+        }
+    }
+
+    private async Task LoadWorkflowIntoCanvas()
+    {
+        await JSRuntime.InvokeVoidAsync("fsDrawflow.clear");
+        foreach (var t in Workflow.Tasks)
+        {
+            var data = new { name = t.Name, type = t.Type, parameters = t.Parameters };
+            var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", t.Name, data, (int)(t.X == 0 ? 100 : t.X), (int)(t.Y == 0 ? 100 : t.Y));
+            t.NodeId = id.ToString();
+        }
+        foreach (var t in Workflow.Tasks)
+        {
+            foreach (var dep in t.Dependencies)
+            {
+                var from = Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
+                if (from != null)
+                    await JSRuntime.InvokeVoidAsync("fsDrawflow.connect", from.NodeId, t.NodeId);
+            }
+        }
+    }
+
+    private async Task AddNodeTemplate(string type)
+    {
+        var newTask = new WorkflowTask
+            {
+                Name = $"{type}-{Workflow.Tasks.Count + 1}",
+                Type = type,
+                X = 120 + (Workflow.Tasks.Count % 5) * 140,
+                Y = 120 + (Workflow.Tasks.Count / 5) * 120
+            };
+        Workflow.Tasks.Add(newTask);
+        var data = new { name = newTask.Name, type = newTask.Type, parameters = newTask.Parameters };
+        var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", newTask.Name, data, (int)newTask.X, (int)newTask.Y);
+        newTask.NodeId = id.ToString();
+        StateHasChanged();
+    }
+
+    private void SetParam(string key, string value) => SelectedTask.Parameters[key] = value;
+    private void RemoveParam(string key) => SelectedTask.Parameters.Remove(key);
+    private void AddParam()
+    {
+        if (!string.IsNullOrWhiteSpace(_newKey))
+        {
+            SelectedTask.Parameters[_newKey] = _newValue;
+            _newKey = _newValue = null;
+        }
+    }
+
+    private Task UpdateNodeTitle() =>
+        SelectedTask != null ? JSRuntime.InvokeVoidAsync("fsDrawflow.updateNodeTitle", SelectedTask.NodeId, SelectedTask.Name, SelectedTask.Type).AsTask() : Task.CompletedTask;
+
+    private void UpdateDepsFromText() =>
+        SelectedTask.Dependencies = _deps?.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
+
+    [JSInvokable]
+    public Task OnNodeSelected(string id)
+    {
+        SelectedTask = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        _deps = SelectedTask != null ? string.Join(',', SelectedTask.Dependencies) : string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable] 
+    public Task OnNodeUnselected() { SelectedTask = null; StateHasChanged(); return Task.CompletedTask; }
+
+    [JSInvokable]
+    public Task OnConnectionCreated(string fromId, string toId)
+    {
+        var from = Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
+        var to = Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
+        if (from != null && to != null && !to.Dependencies.Contains(from.Name))
+            to.Dependencies.Add(from.Name);
+        _deps = SelectedTask == to ? string.Join(',', to.Dependencies) : _deps;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnConnectionRemoved(string fromId, string toId)
+    {
+        var from = Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
+        var to = Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
+        to?.Dependencies.Remove(from?.Name);
+        _deps = SelectedTask == to ? string.Join(',', to.Dependencies) : _deps;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnNodeRemoved(string id)
+    {
+        var t = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        if (t != null)
+        {
+            Workflow.Tasks.Remove(t);
+            foreach (var o in Workflow.Tasks) o.Dependencies.Remove(t.Name);
+            if (SelectedTask == t) { SelectedTask = null; _deps = string.Empty; }
+        }
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _selfRef?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

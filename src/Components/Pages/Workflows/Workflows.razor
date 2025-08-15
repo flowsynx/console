@@ -1,0 +1,150 @@
+﻿@page "/workflows"
+@using FlowSynx.Client.Messages.Responses.PluginConfig
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using FlowSynx.Client.Messages.Responses.Workflows
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+
+<PageTitle>FlowSynx Workflows</PageTitle>
+
+<HeaderTitle Title="Plugin config" Description="This section outlines all plugin configurations currently registered within the FlowSynx environment. Each configuration defines how a specific plugin operates, including connection details, authentication credentials, runtime parameters, and behavior settings." />
+
+<MudTable T="WorkflowListResponse"
+          ServerData="LoadData"
+          Dense="true"
+          Hover="true"
+          Bordered="false"
+          Striped="false"
+          @ref="_table" LoadingProgressColor="Color.Primary">
+    <ToolBarContent>
+        <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add" class="mr-3" OnClick="AddWorkflow">Add workflow</MudButton>
+        <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Modified Date</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Modified Date"><b>@context.ModifiedDate</b></MudTd>
+        <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
+            <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
+                <MudIconButton Icon="@Icons.Material.Outlined.Info" 
+                               Color="Color.Primary" 
+                               Size="@Size.Small"
+                               OnClick="@(() => WorkflowDetails(context.Id))" />
+
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                               Color="Color.Primary" 
+                               Size="@Size.Small" 
+                               OnClick="@(() => UpdateWorkflow(@context.Id))" />
+
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                               Color="Color.Error" 
+                               Size="@Size.Small" 
+                               OnClick="@(() => DeleteWorkflow(@context.Id))" />
+            </MudToolBar>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private string? token;
+    private MudTable<WorkflowListResponse>? _table;
+
+    private async Task<TableData<WorkflowListResponse>> LoadData(
+        TableState state, 
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var result = await FlowSynxClient.Workflows.ListAsync(cancellationToken);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to load plugins: Bad response code.", Severity.Error);
+                return new TableData<WorkflowListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Plugin config error:\n{errorMessage}", Severity.Error);
+                return new TableData<WorkflowListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            var workflows = result.Payload.Data.ToList();
+
+            return new TableData<WorkflowListResponse>
+                {
+                    Items = workflows,
+                    TotalItems = workflows.Count
+                };
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new TableData<WorkflowListResponse>
+                {
+                    Items = [],
+                    TotalItems = 0
+                };
+        }
+    }
+
+    private async Task Refresh()
+    {
+        if (_table != null)
+        {
+            await _table.ReloadServerData();
+        }
+    }
+
+    private void AddWorkflow()
+    {
+        Navigation.NavigateTo("/workflows/add");
+    }
+
+    private async Task DeleteWorkflow(Guid id)
+    {
+       await Refresh();
+    }
+
+    private async Task UpdateWorkflow(Guid id)
+    {
+       await Refresh();
+    }
+
+    private async Task WorkflowDetails(Guid id)
+    {
+       await Refresh();
+    }
+}

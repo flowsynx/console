@@ -66,3 +66,11 @@ h1:focus {
 .gray-subtitle {
     color: var(--mud-palette-text-secondary) !important;
 }
+
+
+
+.task-node {
+    border-radius: 6px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.1s;
+}

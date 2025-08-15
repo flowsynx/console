@@ -1,0 +1,40 @@
+﻿<div class="task-node"
+     style="position:absolute; left:@(X)px; top:@(Y)px; border:1px solid #ccc; padding:10px; background:white; cursor:move;"
+     @onmousedown="StartDrag">
+    <b>@Task.Name</b>
+    <div>@Task.Type</div>
+</div>
+
+@code {
+    [Parameter] public WorkflowTask Task { get; set; }
+    [Parameter] public EventCallback<TaskPosition> OnPositionChanged { get; set; }
+
+    [Parameter] public int X { get; set; }
+    [Parameter] public int Y { get; set; }
+
+    private bool dragging = false;
+    private double startX, startY;
+
+    private void StartDrag(MouseEventArgs e)
+    {
+        dragging = true;
+        startX = e.ClientX - X;
+        startY = e.ClientY - Y;
+    }
+
+    [JSInvokable]
+    public async Task DragMove(double clientX, double clientY)
+    {
+        if (dragging)
+        {
+            X = (int)(clientX - startX);
+            Y = (int)(clientY - startY);
+            await OnPositionChanged.InvokeAsync(new TaskPosition { Name = Task.Name, X = X, Y = Y });
+            StateHasChanged();
+        }
+    }
+
+    private void StopDrag(MouseEventArgs e) => dragging = false;
+
+    public record TaskPosition { public string Name; public int X; public int Y; }
+}

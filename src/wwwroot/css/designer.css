@@ -1,0 +1,93 @@
+﻿.app-header {
+    background: #0b5;
+    padding: 12px 18px;
+    color: #012;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.content {
+    padding: 16px;
+}
+
+.designer-root {
+    display: grid;
+    grid-template-columns: 260px 1fr 420px;
+    gap: 8px;
+    height: calc(100vh - 100px);
+}
+
+.palette, .props {
+    border: 1px solid var(--mud-palette-lines-default);
+    padding: 12px;
+    border-radius: 5px;
+    overflow: auto;
+}
+
+.canvas-wrap {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+label {
+    display: block;
+    font-size: 12px;
+    color: #334155;
+    margin-top: 8px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 12px 0;
+}
+/* Make Drawflow fill the canvas */
+#drawflow {
+    width: 100%;
+    height: 100%;
+}
+
+.drawflow .drawflow-node {
+    background: color-mix(in srgb, var(--mud-palette-background) 90%, black);
+    border: 2px solid var(--mud-palette-lines-default);
+    border-radius: 4px;
+    color: var(--mud-palette-text-primary);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+    .drawflow .drawflow-node:hover {
+        background: color-mix(in srgb, var(--mud-palette-background) 90%, var(--mud-palette-primary));
+        border-color: var(--mud-palette-lines-default);
+    }
+
+    .drawflow .drawflow-node.selected {
+        background: color-mix(in srgb, var(--mud-palette-background) 80%, var(--mud-palette-primary));
+        border: 2px solid var(--mud-palette-primary-lighten);
+    }
+
+.drawflow .connection .main-path {
+    stroke: var(--mud-palette-lines-default);
+    stroke-width: 3px;
+    fill: none;
+    transition: stroke 0.2s ease-in-out;
+}
+
+    .drawflow .connection .main-path:hover {
+        stroke: color-mix(in srgb, var(--mud-palette-background) 60%, var(--mud-palette-primary));
+    }
+
+    .drawflow .connection .main-path.selected {
+        stroke: var(--mud-palette-primary);
+    }
+
+.drawflow .title-box {
+    padding: 3px;
+    border-radius: 5px;
+}

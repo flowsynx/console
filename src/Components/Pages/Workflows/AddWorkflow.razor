@@ -1,0 +1,65 @@
+﻿@page "/workflows/add"
+@inject IWorkflowService WorkflowService
+@inject IJSRuntime JSRuntime
+
+<MudStack Row="true" Spacing="2">
+    <MudButton Variant="Variant.Filled"
+               Size="@Size.Small"
+               Color="Color.Primary"
+               OnClick="ToggleMode">
+        @(_jsonMode ? "Switch to Designer" : "Switch to JSON")
+    </MudButton>
+
+    <MudButton Variant="Variant.Filled"
+               Size="@Size.Small"
+               Color="Color.Primary"
+               OnClick="ExportJson">
+        Export JSON
+    </MudButton>
+
+    <MudButton Variant="Variant.Filled"
+               Size="@Size.Small"
+               Color="Color.Primary"
+               OnClick="ImportJson">
+        Import JSON
+    </MudButton>
+</MudStack>
+
+<MudDivider Class="my-2" />
+
+@if (!_jsonMode)
+{
+    <WorkflowDesigner Workflow="@Workflow" JSRuntime="@JSRuntime" />
+}
+else
+{
+    <WorkflowJsonEditor JsonContent="@_workflowJson" JsonContentChanged="v => _workflowJson = v" />
+}
+
+@code {
+    private Workflow Workflow => WorkflowService.Get();
+    private bool _jsonMode;
+    private string? _workflowJson;
+
+    private void ToggleMode()
+    {
+        _jsonMode = !_jsonMode;
+        if (_jsonMode)
+            _workflowJson = WorkflowService.GetJson();
+    }
+
+    private void ExportJson()
+    {
+        _workflowJson = WorkflowService.GetJson();
+        _jsonMode = true;
+    }
+
+    private void ImportJson()
+    {
+        if (!string.IsNullOrWhiteSpace(_workflowJson))
+        {
+            WorkflowService.SetJson(_workflowJson);
+            _jsonMode = false;
+        }
+    }
+}
