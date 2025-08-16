@@ -1,6 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Components
 @implements IAsyncDisposable
 
+@inject IJSRuntime JSRuntime
+@inject IDialogService DialogService
+
 <div class="designer-root">
     <!-- Palette -->
     <div class="palette">
@@ -19,77 +22,44 @@
 
     <!-- Canvas -->
     <div class="canvas-wrap">
+        <div class="canvas-toolbar">
+            <MudIconButton Variant="Variant.Text"
+                           Size="Size.Medium" 
+                           Icon="@Icons.Material.Filled.ZoomIn" 
+                           OnClick="ZoomIn" />
+
+            <MudIconButton Variant="Variant.Text"
+                           Size="Size.Medium"
+                           Icon="@Icons.Material.Filled.ZoomOut"
+                           OnClick="ZoomOut" />
+
+            <MudIconButton Variant="Variant.Text"
+                           Size="Size.Medium"
+                           Icon="@Icons.Material.Filled.Refresh"
+                           OnClick="ZoomReset" />
+
+            <MudIconButton Variant="Variant.Text"
+                           Size="Size.Medium"
+                           Icon="@Icons.Material.Filled.FilterCenterFocus"
+                           OnClick="Center" />
+        </div>
         <div id="drawflow" style="height:100%;"></div>
-    </div>
-
-    <!-- Properties -->
-    <div class="props">
-        <MudText Typo="Typo.h6">Properties</MudText>
-        @if (SelectedTask != null)
-        {
-            <MudTextField @bind-Value="SelectedTask.Name" Label="Name" Immediate="true" OnBlur="async _ => await UpdateNodeTitle()" />
-            <MudTextField @bind-Value="SelectedTask.Type" Label="Type" Immediate="true" Disabled="true" />
-            <MudTextField @bind-Value="_deps" Label="Dependencies (comma separated)" Immediate="true" OnBlur="UpdateDepsFromText" />
-
-            <MudDivider Class="my-2" />
-            <MudText Typo="Typo.subtitle1">Parameters</MudText>
-            @if (SelectedTask.Parameters == null || SelectedTask.Parameters.Count <= 0)
-            {
-                <MudText>No parameters defined</MudText>
-            }
-            else
-            {
-                @foreach (var kv in SelectedTask.Parameters.ToList())
-                {
-                    <MudGrid Class="mb-2">
-                        <MudItem xs="5">
-                            <MudTextField Value="@kv.Key" Disabled="true" />
-                        </MudItem>
-                        <MudItem xs="5">
-                            <MudTextField 
-                                T="string"
-                                Value="@kv.Value?.ToString()"
-                                ValueChanged="@(v => SetParam(kv.Key, v))" />
-                        </MudItem>
-                        <MudItem xs="2">
-                            <MudButton 
-                                Variant="Variant.Filled"
-                                StartIcon="@Icons.Material.Filled.Delete"
-                                Color="Color.Error" 
-                                OnClick="() => RemoveParam(kv.Key)">
-                            </MudButton>
-                        </MudItem>
-                    </MudGrid>
-                }
-            }
-            <MudGrid>
-                <MudItem xs="5"><MudTextField @bind-Value="_newKey" Placeholder="Key" /></MudItem>
-                <MudItem xs="5"><MudTextField @bind-Value="_newValue" Placeholder="Value" /></MudItem>
-                <MudItem xs="2">
-                    <MudButton 
-                        Size="@Size.Small" 
-                        Variant="Variant.Filled" 
-                        Color="@Color.Primary" 
-                        OnClick="AddParam">Add</MudButton>
-                    </MudItem>
-            </MudGrid>
-        }
-        else
-        {
-            <MudText>No selection</MudText>
-        }
     </div>
 </div>
 
 @code {
     [Parameter] public Workflow Workflow { get; set; }
-    [Parameter] public IJSRuntime JSRuntime { get; set; }
 
     private WorkflowTask SelectedTask;
     private string _deps;
     private string _newKey;
     private string _newValue;
     private DotNetObjectReference<WorkflowDesigner> _selfRef;
+
+    private Task ZoomIn() => JSRuntime.InvokeVoidAsync("fsDrawflow.zoomIn").AsTask();
+    private Task ZoomOut() => JSRuntime.InvokeVoidAsync("fsDrawflow.zoomOut").AsTask();
+    private Task ZoomReset() => JSRuntime.InvokeVoidAsync("fsDrawflow.zoomReset").AsTask();
+    private Task Center() => JSRuntime.InvokeVoidAsync("fsDrawflow.center").AsTask();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -151,6 +121,30 @@
     private Task UpdateNodeTitle() =>
         SelectedTask != null ? JSRuntime.InvokeVoidAsync("fsDrawflow.updateNodeTitle", SelectedTask.NodeId, SelectedTask.Name, SelectedTask.Type).AsTask() : Task.CompletedTask;
 
+    private async void ShowPropertiesDialog(WorkflowTask task)
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
+            BackgroundClass = "blur-dialog-background"
+        };
+
+        var parameters = new DialogParameters
+            {
+                ["SelectedTask"] = task,
+                ["OnUpdated"] = EventCallback.Factory.Create(this, async () =>
+                {
+                    await UpdateNodeTitle();
+                    StateHasChanged();
+                })
+            };
+
+        await DialogService.ShowAsync<WorkflowNodeProperties>("Properties", parameters, options);
+    }
+
     private void UpdateDepsFromText() =>
         SelectedTask.Dependencies = _deps?.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
 
@@ -200,6 +194,30 @@
             if (SelectedTask == t) { SelectedTask = null; _deps = string.Empty; }
         }
         StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnNodeDoubleClicked(string id)
+    {
+        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        if (task != null)
+        {
+            SelectedTask = task;
+            ShowPropertiesDialog(task);
+        }
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnNodeProperties(string id)
+    {
+        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        if (task != null)
+        {
+            SelectedTask = task;
+            ShowPropertiesDialog(task);
+        }
         return Task.CompletedTask;
     }
 

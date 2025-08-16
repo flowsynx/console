@@ -1,0 +1,86 @@
+﻿@using MudBlazor
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public WorkflowTask SelectedTask { get; set; } = default!;
+    [Parameter] public EventCallback OnUpdated { get; set; } = default!;
+
+    private string _deps;
+    private string _newKey;
+    private string _newValue;
+
+    protected override void OnInitialized()
+    {
+        _deps = SelectedTask != null ? string.Join(',', SelectedTask.Dependencies) : string.Empty;
+    }
+
+    private void UpdateDepsFromText() =>
+        SelectedTask.Dependencies = _deps?.Split(',')
+            .Select(s => s.Trim())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList() ?? new();
+
+    private void SetParam(string key, string value) => SelectedTask.Parameters[key] = value;
+    private void RemoveParam(string key) => SelectedTask.Parameters.Remove(key);
+    private void AddParam()
+    {
+        if (!string.IsNullOrWhiteSpace(_newKey))
+        {
+            SelectedTask.Parameters[_newKey] = _newValue;
+            _newKey = _newValue = null;
+        }
+    }
+
+    private async Task SaveAndClose()
+    {
+        await OnUpdated.InvokeAsync();
+        MudDialog.Close();
+    }
+}
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" /> Properties
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (SelectedTask != null)
+        {
+            <MudTextField @bind-Value="SelectedTask.Name" Label="Name" Immediate="true" />
+            <MudTextField @bind-Value="SelectedTask.Type" Label="Type" Immediate="true" Disabled="true" />
+            <MudTextField @bind-Value="_deps" Label="Dependencies (comma separated)" Immediate="true" OnBlur="UpdateDepsFromText" />
+
+            <MudDivider Class="my-2" />
+            <MudText Typo="Typo.subtitle1">Parameters</MudText>
+            @if (SelectedTask.Parameters == null || SelectedTask.Parameters.Count <= 0)
+            {
+                <MudText>No parameters defined</MudText>
+            }
+            else
+            {
+                @foreach (var kv in SelectedTask.Parameters.ToList())
+                {
+                    <MudGrid Class="mb-2">
+                        <MudItem xs="5"><MudTextField Value="@kv.Key" Disabled="true" /></MudItem>
+                        <MudItem xs="5"><MudTextField T="string" Value="@kv.Value?.ToString()" ValueChanged="@(v => SetParam(kv.Key, v))" /></MudItem>
+                        <MudItem xs="2"><MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="() => RemoveParam(kv.Key)"><MudIcon Icon="@Icons.Material.Filled.Delete" /></MudButton></MudItem>
+                    </MudGrid>
+                }
+            }
+
+            <MudGrid>
+                <MudItem xs="5"><MudTextField @bind-Value="_newKey" Placeholder="Key" /></MudItem>
+                <MudItem xs="5"><MudTextField @bind-Value="_newValue" Placeholder="Value" /></MudItem>
+                <MudItem xs="2"><MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="AddParam">Add</MudButton></MudItem>
+            </MudGrid>
+        }
+        else
+        {
+            <MudText>No selection</MudText>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="SaveAndClose">Save</MudButton>
+        <MudButton OnClick="MudDialog.Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
