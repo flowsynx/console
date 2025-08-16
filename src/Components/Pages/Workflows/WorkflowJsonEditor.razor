@@ -1,16 +1,49 @@
-﻿<MudTextField T="string"
-              @bind-Value="JsonContent"
-              Label="Workflow JSON"
-              Lines="20"
-              FullWidth="true"
-              Variant="Variant.Outlined"
-              Text="@JsonContent"
-              OnBlur="OnJsonChanged" />
+﻿@inject IJSRuntime JSRuntime
+
+<div @ref="EditorContainer" style="height: 500px; width: 100%;"></div>
 
 @code {
-    [Parameter] public string? JsonContent { get; set; }
-    [Parameter] public EventCallback<string> JsonContentChanged { get; set; }
+    private ElementReference EditorContainer;
+    private IJSObjectReference? _jsonEditor;
+    private DotNetObjectReference<WorkflowJsonEditor>? _dotNetRef;
 
-    private async Task OnJsonChanged(FocusEventArgs e) =>
+    [Parameter]
+    public string? JsonContent { get; set; }
+
+    [Parameter]
+    public EventCallback<string> JsonContentChanged { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("initializeJsonEditor",
+                EditorContainer,
+                JsonContent,
+                _dotNetRef);
+        }
+        else if (_jsonEditor != null && JsonContent != null)
+        {
+            await _jsonEditor.InvokeVoidAsync("set", JsonContent);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnJsonChange(string json)
+    {
+        JsonContent = json;
         await JsonContentChanged.InvokeAsync(JsonContent);
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsonEditor != null)
+        {
+            await _jsonEditor.InvokeVoidAsync("destroy");
+            await _jsonEditor.DisposeAsync();
+        }
+        _dotNetRef?.Dispose();
+    }
 }
