@@ -1,8 +1,18 @@
-﻿<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-0">@Title</MudText>
-<MudText Typo="Typo.subtitle2" Class="mb-5 gray-subtitle">@Description</MudText>
+﻿<MudText Typo="Typo.h5" Color="Color.Primary" Class="@CombineClass("mb-0")">
+    @Title
+</MudText>
+<MudText Typo="Typo.subtitle2" Class="@CombineClass("mb-5 gray-subtitle")">
+    @Description
+</MudText>
 
-@code
-{
+@code {
     [Parameter] public required string Title { get; set; }
     [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string CombineClass(string defaultClass)
+    {
+        // If user provided a class, combine it with default class
+        return string.IsNullOrWhiteSpace(Class) ? defaultClass : $"{defaultClass} {Class}";
+    }
 }
