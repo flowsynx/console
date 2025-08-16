@@ -11,24 +11,77 @@
 
 .designer-root {
     display: grid;
-    grid-template-columns: 260px 1fr;
     gap: 8px;
     height: calc(100vh - 100px);
+    position: relative;
+    width: 100%;
 }
 
-.palette, .props {
-    border: 1px solid var(--mud-palette-lines-default);
-    padding: 12px;
-    border-radius: 5px;
-    overflow: auto;
-}
-
+/* Canvas fills the container */
 .canvas-wrap {
+    width: 100%;
+    height: 100%;
+    background-color: var(--mud-palette-background);
     border: 1px solid var(--mud-palette-lines-default);
     border-radius: 5px;
     position: relative;
     overflow: hidden;
 }
+
+.palette-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+}
+
+.palette {
+    width: 280px;
+    height: 100%;
+    top: 0px;
+    left: 32px !important;
+    background: var(--mud-palette-background);
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    align-items: center;
+    justify-content: center;
+    transform: translateX(calc(-32px));
+    opacity: 0.7;
+    transition: transform 0.75s ease, opacity 0.5s ease;
+    z-index: 29;
+    position: absolute;
+    padding: 4px 8px;
+}
+
+    .palette.hidden {
+        transform: translateX(-32px);
+        opacity: 0;
+    }
+
+    .palette.visible {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+.palette-toggle {
+    position: absolute;
+    z-index: 30;
+    height: 100%;
+    min-width: 12px !important;
+    background: var(--mud-palette-background);
+    border: 1px solid var(--mud-palette-lines-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-lr;
+    font-weight:bold;
+}
+
+    .palette-toggle:hover {
+        background: var(--mud-palette-background);
+    }
 
 .toolbar {
     display: flex;
@@ -76,6 +129,9 @@ hr {
     z-index: 10;
     display: flex;
     flex-direction: column;
+    background-color: var(--mud-palette-background);
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .drawflow-canvas {

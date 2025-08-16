@@ -5,27 +5,24 @@
 @inject IDialogService DialogService
 
 <div class="designer-root">
-    <!-- Palette -->
-    <div class="palette">
-        <MudText Typo="Typo.h6">Plugins</MudText>
+    <div class="palette-container">
+        <MudButton Size="Size.Small"
+                   Class="palette-toggle"
+                   OnClick="@TogglePalette">Plugins</MudButton>
 
-        <MudPaper Class="pa-2 mb-2">
-            <MudButton Variant="Variant.Outlined" OnClick="@(() => AddNodeTemplate("process"))">+ Process</MudButton>
-        </MudPaper>
-        <MudPaper Class="pa-2 mb-2">
-            <MudButton Variant="Variant.Outlined" OnClick="@(() => AddNodeTemplate("write"))">+ Write</MudButton>
-        </MudPaper>
-        <MudPaper Class="pa-2 mb-2">
-            <MudButton Variant="Variant.Outlined" OnClick="@(() => AddNodeTemplate("http"))">+ HTTP</MudButton>
-        </MudPaper>
+        <!-- Palette -->
+        <div class="palette @(IsPaletteVisible ? "visible" : "hidden")">
+            <HeaderTitle Title="Plugins" />
+            <SearchablePluginsList Items="@_plugins" OnItemClick="AddNodeTemplate" />
+        </div>
     </div>
 
     <!-- Canvas -->
     <div class="canvas-wrap">
         <div class="canvas-toolbar">
             <MudIconButton Variant="Variant.Text"
-                           Size="Size.Medium" 
-                           Icon="@Icons.Material.Filled.ZoomIn" 
+                           Size="Size.Medium"
+                           Icon="@Icons.Material.Filled.ZoomIn"
                            OnClick="ZoomIn" />
 
             <MudIconButton Variant="Variant.Text"
@@ -55,6 +52,14 @@
     private string _newKey;
     private string _newValue;
     private DotNetObjectReference<WorkflowDesigner> _selfRef;
+    private bool IsPaletteVisible = true;
+
+    private List<string> _plugins = new() { "Alpha", "Beta", "Gamma", "Delta", "Epsilon" };
+
+    private void TogglePalette()
+    {
+        IsPaletteVisible = !IsPaletteVisible;
+    }
 
     private Task ZoomIn() => JSRuntime.InvokeVoidAsync("fsDrawflow.zoomIn").AsTask();
     private Task ZoomOut() => JSRuntime.InvokeVoidAsync("fsDrawflow.zoomOut").AsTask();
@@ -124,13 +129,13 @@
     private async void ShowPropertiesDialog(WorkflowTask task)
     {
         var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Small,
-            BackdropClick = false,
-            CloseOnEscapeKey = false,
-            BackgroundClass = "blur-dialog-background"
-        };
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
 
         var parameters = new DialogParameters
             {
@@ -157,7 +162,7 @@
         return Task.CompletedTask;
     }
 
-    [JSInvokable] 
+    [JSInvokable]
     public Task OnNodeUnselected() { SelectedTask = null; StateHasChanged(); return Task.CompletedTask; }
 
     [JSInvokable]
