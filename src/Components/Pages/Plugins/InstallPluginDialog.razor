@@ -35,17 +35,19 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Text" 
-                                    StartIcon="@Icons.Material.Filled.Close"
-                                    Color="Color.Default"
-                                    Disabled="@IsProcessing"
-                                    OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small"
+                   OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton DisableElevation Variant="Variant.Filled" 
-                                    StartIcon="@Icons.Material.Filled.Save"
-                                    Color="Color.Primary" 
-                                    Disabled="@IsProcessing"
-                                    OnClick="Install">@(IsProcessing ? "Installing..." : "Install")</MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   Color="Color.Primary"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small"
+                   OnClick="Install">@(IsProcessing ? "Installing..." : "Install")</MudButton>
     </DialogActions>
 </MudDialog>
 

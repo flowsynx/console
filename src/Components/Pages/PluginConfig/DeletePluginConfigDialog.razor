@@ -30,16 +30,18 @@
         </MudText>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text" 
+        <MudButton Variant="Variant.Outlined" 
                    StartIcon="@Icons.Material.Filled.Close"
                    Color="Color.Default"
                    Disabled="@IsProcessing"
+                   Size="Size.Small"
                    OnClick="Cancel">Cancel</MudButton>
 
         <MudButton Color="Color.Error" 
                    StartIcon="@Icons.Material.Filled.DeleteForever"
-                   Variant="Variant.Filled" 
+                   Variant="Variant.Outlined" 
                    Disabled="@IsProcessing"
+                   Size="Size.Small"
                    OnClick="Delete">@(IsProcessing ? "Deleting..." : "Delete")</MudButton>
     </DialogActions>
 </MudDialog>
@@ -111,7 +113,7 @@
             }
             else
             {
-                SnackBar.Add("Plugin config delete successfully!", Severity.Success);
+                SnackBar.Add("Plugin config deleted successfully!", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
         }

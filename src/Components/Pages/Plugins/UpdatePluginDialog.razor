@@ -44,16 +44,18 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Text" 
+        <MudButton DisableElevation Variant="Variant.Outlined" 
                                     StartIcon="@Icons.Material.Filled.Close"
                                     Color="Color.Default"
                                     Disabled="@IsProcessing"
+                                    Size="Size.Small"
                                     OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton DisableElevation Variant="Variant.Filled" 
+        <MudButton DisableElevation Variant="Variant.Outlined" 
                                     StartIcon="@Icons.Material.Filled.Save"
                                     Color="Color.Primary" 
                                     Disabled="@IsProcessing"
+                                    Size="Size.Small"
                                     OnClick="Update">@(IsProcessing ? "Updating..." : "Update")</MudButton>
     </DialogActions>
 </MudDialog>

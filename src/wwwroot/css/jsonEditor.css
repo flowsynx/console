@@ -1,4 +1,9 @@
-﻿.jsoneditor {
+﻿#jsoneditor {
+    height: 100vh; /* full viewport height */
+    width: 100%;
+}
+
+.jsoneditor {
     border: 1px solid var(--mud-palette-lines-default) !important;
     font-family: var(--mud-typography-font-family) !important;
     font-size: var(--mud-typography-body1-font-size) !important;

@@ -113,15 +113,15 @@ public static class Theme
     {
         PaletteLight = new PaletteLight
         {
-            Primary = new MudBlazor.Utilities.MudColor("#008b8b"),
-            AppbarBackground = new MudBlazor.Utilities.MudColor("#008b8b"),
-            TextSecondary = new MudBlazor.Utilities.MudColor("#999999"),
+            Primary = new MudBlazor.Utilities.MudColor("#006d6d"),
+            AppbarBackground = new MudBlazor.Utilities.MudColor("#007f7f"),
+            TextSecondary = new MudBlazor.Utilities.MudColor("#666666"),
         },
         PaletteDark = new PaletteDark
         {
-            Primary = new MudBlazor.Utilities.MudColor("#40e0d0"),
-            AppbarBackground = new MudBlazor.Utilities.MudColor("#40e0d0"),
-            TextSecondary = new MudBlazor.Utilities.MudColor("#BDBDBD"),
+            Primary = new MudBlazor.Utilities.MudColor("#90a4ae"),
+            AppbarBackground = new MudBlazor.Utilities.MudColor("#121212"),
+            TextSecondary = new MudBlazor.Utilities.MudColor("#cfd8dc")
         },
         Typography = DefaultTypography,
         LayoutProperties = DefaultLayoutProperties

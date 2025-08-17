@@ -22,7 +22,9 @@
                     <MudText>
                         <strong>Config name:</strong> @pluginConfigDetailsResponse.Name
                         <br />
-                        <strong>Config type:</strong> @pluginConfigDetailsResponse.Type
+                        <strong>Plugin type:</strong> @pluginConfigDetailsResponse.Type
+                        <br />
+                        <strong>Plugin version:</strong> @pluginConfigDetailsResponse.Version
                     </MudText>
                 </MudItem>
                 @if (pluginConfigDetailsResponse.Specifications != null && pluginConfigDetailsResponse.Specifications.Count > 0)
@@ -49,10 +51,11 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text"
+        <MudButton Variant="Variant.Outlined"
                    StartIcon="@Icons.Material.Filled.Close"
                    Color="Color.Default"
                    Disabled="@IsProcessing"
+                   Size="Size.Small"
                    OnClick="Cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>

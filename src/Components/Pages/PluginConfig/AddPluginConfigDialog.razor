@@ -57,10 +57,10 @@
                     <ToolBarContent>
                         <MudButton DisableElevation 
                             Variant="Variant.Outlined" 
-                            Color="Color.Primary" 
+                            Color="Color.Default" 
                             Size="@Size.Small"
-                            StartIcon="@Icons.Material.Filled.Add" 
-                            OnClick="AddSpecification">Add item</MudButton>
+                            Class="size-small-button"
+                            OnClick="AddSpecification">Add specification item</MudButton>
                     </ToolBarContent>
                     <HeaderContent>
                         <MudTh>Key</MudTh>
@@ -85,7 +85,7 @@
                         <MudTd>
                             <MudIconButton 
                                 Icon="@Icons.Material.Filled.Delete"
-                                Variant="Variant.Filled"
+                                Variant="Variant.Text"
                                 Color="Color.Error" 
                                 Size="Size.Small" 
                                 OnClick="@(() => DeleteSpecification(context.Id))"></MudIconButton>
@@ -96,16 +96,18 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Text" 
+        <MudButton DisableElevation Variant="Variant.Outlined" 
                                     StartIcon="@Icons.Material.Filled.Close"
                                     Color="Color.Default"
                                     Disabled="@IsProcessing"
+                                    Size="Size.Small"
                                     OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton DisableElevation Variant="Variant.Filled" 
-                                    StartIcon="@Icons.Material.Filled.Save"
+        <MudButton DisableElevation Variant="Variant.Outlined" 
+                                    StartIcon="@Icons.Material.Filled.Add"
                                     Color="Color.Primary" 
                                     Disabled="@IsProcessing"
+                   Size="Size.Small"
                                     OnClick="Add">@(IsProcessing ? "Adding..." : "Add")</MudButton>
     </DialogActions>
 </MudDialog>

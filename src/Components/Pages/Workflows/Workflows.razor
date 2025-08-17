@@ -14,7 +14,7 @@
 
 <PageTitle>FlowSynx Workflows</PageTitle>
 
-<HeaderTitle Title="Plugin config" Description="This section outlines all plugin configurations currently registered within the FlowSynx environment. Each configuration defines how a specific plugin operates, including connection details, authentication credentials, runtime parameters, and behavior settings." />
+<HeaderTitle Title="Workflows" Description="Create and manage workflows to streamline processes, connect tasks, and ensure reliable execution" />
 
 <MudTable T="WorkflowListResponse"
           ServerData="LoadData"
@@ -24,10 +24,10 @@
           Striped="false"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
-        <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Add" class="mr-3" OnClick="AddWorkflow">Add workflow</MudButton>
+        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add" class="mr-1" OnClick="AddWorkflow">Add workflow</MudButton>
         <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
+                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Name</MudTh>
@@ -39,11 +39,6 @@
         <MudTd DataLabel="Modified Date"><b>@context.ModifiedDate</b></MudTd>
         <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
             <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
-                <MudIconButton Icon="@Icons.Material.Outlined.Info" 
-                               Color="Color.Primary" 
-                               Size="@Size.Small"
-                               OnClick="@(() => WorkflowDetails(context.Id))" />
-
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                Color="Color.Primary" 
                                Size="@Size.Small" 
@@ -52,7 +47,7 @@
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                Color="Color.Error" 
                                Size="@Size.Small" 
-                               OnClick="@(() => DeleteWorkflow(@context.Id))" />
+                               OnClick="@(() => DeleteWorkflow(@context.Id, context.Name))" />
             </MudToolBar>
         </MudTd>
     </RowTemplate>
@@ -133,18 +128,30 @@
         Navigation.NavigateTo("/workflows/add");
     }
 
-    private async Task DeleteWorkflow(Guid id)
+    private async Task DeleteWorkflow(Guid id, string workflowName)
     {
-       await Refresh();
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "Id", id },
+            { "WorkflowName", workflowName }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteWorkflowDialog>("Delete workflow", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
     }
 
-    private async Task UpdateWorkflow(Guid id)
+    private void UpdateWorkflow(Guid id)
     {
-       await Refresh();
-    }
-
-    private async Task WorkflowDetails(Guid id)
-    {
-       await Refresh();
+        Navigation.NavigateTo($"/workflows/update/{id}");
     }
 }

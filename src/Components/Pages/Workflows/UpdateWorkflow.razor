@@ -1,4 +1,4 @@
-﻿@page "/workflows/add"
+﻿@page "/workflows/update/{id:guid}"
 @using FlowSynx.Client.Messages.Requests.Workflows
 @inject IWorkflowService WorkflowService
 @inject IJSRuntime JSRuntime
@@ -60,11 +60,65 @@ else
 }
 
 @code {
+    [Parameter]
+    public Guid id { get; set; }
+
     private bool IsProcessing = false;
     private Workflow Workflow => WorkflowService.Get();
     private bool _jsonMode;
     private string? _workflowJson;
-    private AddWorkflowRequest AddWorkflowRequest = new AddWorkflowRequest{Definition = ""};
+    private UpdateWorkflowRequest UpdateWorkflowRequest = new UpdateWorkflowRequest 
+    { 
+        Id = Guid.Empty , 
+        Definition = "" 
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorkflow();
+    }
+
+    private async Task LoadWorkflow()
+    {
+        try
+        {
+            IsProcessing = true;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+            if (string.IsNullOrEmpty(accessTokenResult))
+            {
+                SnackBar.Add("No token available or user not authenticated.", Severity.Error);
+                return;
+            }
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(accessTokenResult);
+
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var workflowResult = await FlowSynxClient.Workflows.DetailsAsync(new WorkflowDetailsRequest{ Id = id });
+
+            if (workflowResult.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while fetching the workflow.", Severity.Error);
+                return;
+            }
+            var payload = workflowResult.Payload;
+            if (!payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
+                SnackBar.Add($"Get workflow error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+
+            _workflowJson = payload.Data.Workflow;
+            WorkflowService.SetJson(_workflowJson);
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
 
     private void ToggleMode()
     {
@@ -111,14 +165,16 @@ else
                     SnackBar.Add("Please provide a valid JSON definition.", Severity.Error);
                     return;
                 }
-                AddWorkflowRequest.Definition = _workflowJson;
+                UpdateWorkflowRequest.Definition = _workflowJson;
             }
             else
             {
-                AddWorkflowRequest.Definition = WorkflowService.GetJson();
+                UpdateWorkflowRequest.Definition = WorkflowService.GetJson();
             }
 
-            var result = await FlowSynxClient.Workflows.AddAsync(AddWorkflowRequest);
+            UpdateWorkflowRequest.Id = id;
+
+            var result = await FlowSynxClient.Workflows.UpdateAsync(UpdateWorkflowRequest);
             if (result.StatusCode != 200)
             {
                 SnackBar.Add("Server error while processing the request.", Severity.Error);
@@ -129,12 +185,12 @@ else
             if (!payload.Succeeded)
             {
                 var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Add workflow error:\n{errorMessage}", Severity.Error);
+                SnackBar.Add($"Update workflow error:\n{errorMessage}", Severity.Error);
                 return;
             }
             else
             {
-                SnackBar.Add("Workflow added successfully!", Severity.Success);
+                SnackBar.Add("Workflow updated successfully!", Severity.Success);
                 Navigation.NavigateTo("/workflows", true);
             }
         }

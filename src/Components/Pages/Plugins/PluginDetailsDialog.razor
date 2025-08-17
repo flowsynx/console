@@ -20,7 +20,7 @@
                     <MudText>
                         <strong>Plugin type:</strong> @pluginDetailsResponse.Type
                         <br />
-                        <strong>Plugin version:</strong> 1.1.0
+                        <strong>Plugin version:</strong> @pluginDetailsResponse.Version
                         <br /><br />
                         <strong>Description:</strong><br />
                         @pluginDetailsResponse.Description
@@ -48,10 +48,11 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text"
+        <MudButton Variant="Variant.Outlined"
                    StartIcon="@Icons.Material.Filled.Close"
                    Color="Color.Default"
                    Disabled="@IsProcessing"
+                   Size="Size.Small"
                    OnClick="Cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>

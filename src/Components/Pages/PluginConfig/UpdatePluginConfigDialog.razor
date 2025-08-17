@@ -45,23 +45,23 @@
             </MudItem>
             <MudItem xs="12">
                 <MudTextField For="@(() => UpdatePluginConfigRequest.Version)"
-                @bind-Value="UpdatePluginConfigRequest.Version"
-                Label="Plugin version"
-                Required="true"
-                Variant="Variant.Text"
-                Margin="Margin.Dense"
-                HelperText="Enter the version of the plugin" />
+                              @bind-Value="UpdatePluginConfigRequest.Version"
+                              Label="Plugin version"
+                              Required="true"
+                              Variant="Variant.Text"
+                              Margin="Margin.Dense"
+                              HelperText="Enter the version of the plugin" />
             </MudItem>
             <MudItem xs="12" md="12">
                 <MudText Typo="Typo.h6" Color="Color.Primary">Specifications</MudText>
                 <MudTable Items="_specifications" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
                     <ToolBarContent>
                         <MudButton DisableElevation
-                        Variant="Variant.Outlined"
-                        Color="Color.Primary"
-                        Size="@Size.Small"
-                        StartIcon="@Icons.Material.Filled.Add"
-                        OnClick="AddSpecification">Add item</MudButton>
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   Size="@Size.Small"
+                                   Class="size-small-button"
+                                   OnClick="AddSpecification">Add specification item</MudButton>
                     </ToolBarContent>
                     <HeaderContent>
                         <MudTh>Key</MudTh>
@@ -71,22 +71,22 @@
                     <RowTemplate>
                         <MudTd>
                             <MudTextField For="@(() => context.Key)"
-                            @bind-Value="context.Key"
-                            Variant="Variant.Text"
-                            Margin="Margin.Dense" />
+                                          @bind-Value="context.Key"
+                                          Variant="Variant.Text"
+                                          Margin="Margin.Dense" />
                         </MudTd>
                         <MudTd>
                             <MudTextField For="@(() => context.Value)"
-                            @bind-Value="context.Value"
-                            Variant="Variant.Text"
-                            Margin="Margin.Dense" />
+                                          @bind-Value="context.Value"
+                                          Variant="Variant.Text"
+                                          Margin="Margin.Dense" />
                         </MudTd>
                         <MudTd>
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                            Variant="Variant.Filled"
-                            Color="Color.Error"
-                            Size="Size.Small"
-                            OnClick="@(() => DeleteSpecification(context.Id))"></MudIconButton>
+                                           Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => DeleteSpecification(context.Id))"></MudIconButton>
                         </MudTd>
                     </RowTemplate>
                 </MudTable>
@@ -94,17 +94,19 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Text"
-        StartIcon="@Icons.Material.Filled.Close"
-        Color="Color.Default"
-        Disabled="@IsProcessing"
-        OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small"
+                   OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton DisableElevation Variant="Variant.Filled"
-        StartIcon="@Icons.Material.Filled.Save"
-        Color="Color.Primary"
-        Disabled="@IsProcessing"
-        OnClick="Update">@(IsProcessing ? "Updating..." : "Update")</MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Color="Color.Primary"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small"
+                   OnClick="Update">@(IsProcessing ? "Updating..." : "Update")</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -120,11 +122,11 @@
     private IEnumerable<PluginsListResponse> PluginTypes = new List<PluginsListResponse>();
     private UpdatePluginConfigRequest UpdatePluginConfigRequest = new()
         {
-        Id = Guid.Empty,
-        Name = string.Empty,
-        Type = string.Empty,
-        Version = string.Empty
-    };
+            Id = Guid.Empty,
+            Name = string.Empty,
+            Type = string.Empty,
+            Version = string.Empty
+        };
 
     override protected async Task OnInitializedAsync()
     {
@@ -151,7 +153,7 @@
 
     void AddSpecification()
     {
-        _specifications.Add(new TempKeyValue(){Id = Guid.NewGuid()});
+        _specifications.Add(new TempKeyValue() { Id = Guid.NewGuid() });
     }
 
     void DeleteSpecification(Guid id)
@@ -178,9 +180,9 @@
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
 
             var unInstallPluginRequest = new PluginConfigDetailsRequest()
-            {
-                Id = Id
-            };
+                {
+                    Id = Id
+                };
             var result = await FlowSynxClient.PluginConfig.DetailsAsync(unInstallPluginRequest);
             if (result.StatusCode != 200)
             {
@@ -198,25 +200,25 @@
             else
             {
                 UpdatePluginConfigRequest = new UpdatePluginConfigRequest
-                {
-                    Id = payload.Data.Id,
-                    Name = payload.Data.Name,
-                    Type = payload.Data.Type,
-                    Version = "1.1.0"
-                };
+                    {
+                        Id = payload.Data.Id,
+                        Name = payload.Data.Name,
+                        Type = payload.Data.Type,
+                        Version = payload.Data.Version
+                    };
 
                 if (payload.Data.Specifications == null)
                 {
                     _specifications = new List<TempKeyValue>();
                 }
-                else 
+                else
                 {
-                _specifications = payload.Data.Specifications.Select(spec => new TempKeyValue
-                    {
-                        Id = Guid.NewGuid(),
-                        Key = spec.Key,
-                        Value = spec.Value
-                    }).ToList();
+                    _specifications = payload.Data.Specifications.Select(spec => new TempKeyValue
+                        {
+                            Id = Guid.NewGuid(),
+                            Key = spec.Key,
+                            Value = spec.Value
+                        }).ToList();
                 }
             }
         }
@@ -292,7 +294,7 @@
                     if (!objDict.ContainsKey(item.Key))
                         objDict.Add(item.Key, item.Value);
                 }
-            
+
                 UpdatePluginConfigRequest.Specifications = objDict;
             }
             else

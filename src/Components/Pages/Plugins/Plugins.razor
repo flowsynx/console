@@ -21,35 +21,37 @@
           Striped="false"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
-        <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Add" class="mr-3" OnClick="InstallPlugin">Install</MudButton>
+        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add" class="mr-1" OnClick="InstallPlugin">Install</MudButton>
         <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
+                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Type</MudTh>
+        <MudTh>Version</MudTh>
         <MudTh>Description</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Name"><b>@context.Type</b></MudTd>
-        <MudTd DataLabel="Type">@context.Description</MudTd>
+        <MudTd DataLabel="Type"><b>@context.Type</b></MudTd>
+        <MudTd DataLabel="Version"><b>@context.Version</b></MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
         <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
             <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
-                <MudIconButton Icon="@Icons.Material.Outlined.Info" 
-                               Color="Color.Primary" 
+                <MudIconButton Icon="@Icons.Material.Outlined.Info"
+                               Color="Color.Primary"
                                Size="@Size.Small"
                                OnClick="@(() => PluginDetails(context.Id))" />
 
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                               Color="Color.Primary" 
-                               Size="@Size.Small" 
-                               OnClick="@(() => UpdatePlugin(@context.Type, "1.1.0"))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Primary"
+                               Size="@Size.Small"
+                               OnClick="@(() => UpdatePlugin(@context.Type, @context.Version))" />
 
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                               Color="Color.Error" 
-                               Size="@Size.Small" 
-                               OnClick="@(() => UninstallPlugin(@context.Type, "1.1.0"))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Size="@Size.Small"
+                               OnClick="@(() => UninstallPlugin(@context.Type, @context.Version))" />
             </MudToolBar>
         </MudTd>
     </RowTemplate>
@@ -145,13 +147,13 @@
     private async Task UninstallPlugin(string type, string version)
     {
         var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Small,
-            BackdropClick = true,
-            CloseOnEscapeKey = true,
-            BackgroundClass = "blur-dialog-background"
-        };
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
 
         var parameters = new DialogParameters {
             { "PluginType", type },
@@ -164,16 +166,16 @@
             await Refresh();
     }
 
-        private async Task UpdatePlugin(string type, string currentVersion)
+    private async Task UpdatePlugin(string type, string currentVersion)
     {
         var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Small,
-            BackdropClick = false,
-            CloseOnEscapeKey = false,
-            BackgroundClass = "blur-dialog-background"
-        };
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
 
         var parameters = new DialogParameters {
             { "PluginType", type },

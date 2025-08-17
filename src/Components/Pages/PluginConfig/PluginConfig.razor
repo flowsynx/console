@@ -22,10 +22,10 @@
           Striped="false"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
-        <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Add" class="mr-3" OnClick="AddPluginConfig">Add config</MudButton>
+        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add" class="mr-1" OnClick="AddPluginConfig">Add config</MudButton>
         <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
+                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Name</MudTh>
@@ -50,7 +50,7 @@
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                Color="Color.Error" 
                                Size="@Size.Small" 
-                               OnClick="@(() => DeletePluginConfig(@context.Id, context.Name, @context.Type, "1.1.0"))" />
+                               OnClick="@(() => DeletePluginConfig(@context.Id, context.Name, @context.Type, @context.Version))" />
             </MudToolBar>
         </MudTd>
     </RowTemplate>
@@ -153,8 +153,8 @@
         {
             CloseButton = false,
             MaxWidth = MaxWidth.Small,
-            BackdropClick = true,
-            CloseOnEscapeKey = true,
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
             BackgroundClass = "blur-dialog-background"
         };
 
@@ -177,8 +177,8 @@
         {
             CloseButton = false,
             MaxWidth = MaxWidth.Small,
-            BackdropClick = true,
-            CloseOnEscapeKey = true,
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
             BackgroundClass = "blur-dialog-background"
         };
 
