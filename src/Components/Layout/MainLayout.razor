@@ -9,12 +9,25 @@
 
 <MudLayout>
     <MudAppBar Elevation="25" Dense="true" Fixed="true">
-        <MudText Typo="Typo.h6">FlowSynx Console</MudText>
-        <MudToolBar DisableGutters="true">
-            <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" OnClick="DrawerToggle" Class="ml-3" />
-        </MudToolBar>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudText Typo="Typo.h6">FlowSynx Console</MudText>
+        </MudHidden>
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudText Typo="Typo.h6">Console</MudText>
+        </MudHidden>
+
+        <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" OnClick="DrawerToggle" />
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <Breadcrumbs />
+        </MudHidden>
+
         <MudSpacer />
-        <MudSwitch Label="Dark" @bind-value="IsDarkMode" />
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudSwitch Label="Dark" @bind-value="IsDarkMode" />
+        </MudHidden>
         <LoginDisplay />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="25" ClipMode="DrawerClipMode.Always">

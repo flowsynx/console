@@ -1,0 +1,19 @@
+﻿@using MudBlazor
+@inject BreadcrumbService BreadcrumbsService
+
+<MudBreadcrumbs 
+    Items="BreadcrumbsService.Items.Select(i => new MudBlazor.BreadcrumbItem(i.Text, i.Href, i.Disabled)).ToList()" 
+        Class="breadcrumbs-custom">
+</MudBreadcrumbs>
+
+@code {
+    protected override void OnInitialized()
+    {
+        BreadcrumbsService.OnChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        BreadcrumbsService.OnChanged -= StateHasChanged;
+    }
+}
