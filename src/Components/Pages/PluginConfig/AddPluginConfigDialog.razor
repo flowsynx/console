@@ -103,11 +103,11 @@
                                     Size="Size.Small"
                                     OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton DisableElevation Variant="Variant.Outlined" 
+        <MudButton DisableElevation Variant="Variant.Filled" 
                                     StartIcon="@Icons.Material.Filled.Add"
                                     Color="Color.Primary" 
                                     Disabled="@IsProcessing"
-                   Size="Size.Small"
+                                    Size="Size.Small"
                                     OnClick="Add">@(IsProcessing ? "Adding..." : "Add")</MudButton>
     </DialogActions>
 </MudDialog>
@@ -184,8 +184,8 @@
 
             if (!result.Payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
-                SnackBar.Add($"Plugin error:\n{errorMessage}", Severity.Error);
+                foreach (var message in result.Payload.Messages)
+                    SnackBar.Add($"Load plugins error:\n{message}", Severity.Error);
                 return new List<PluginsListResponse>();
             }
 
@@ -245,8 +245,9 @@
             var payload = result.Payload;
             if (!payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Add plugin config error:\n{errorMessage}", Severity.Error);
+                foreach (var message in payload.Messages)
+                    SnackBar.Add($"Add plugin config error:\n{message}", Severity.Error);
+
                 return;
             }
             else

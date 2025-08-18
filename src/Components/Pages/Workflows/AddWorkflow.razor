@@ -14,9 +14,9 @@
 <HeaderTitle Title="Workflow designer" Description="A visual interface to create, edit, and manage workflow." />
 
 <MudStack Row="true" Spacing="2" Class="">
-    <MudButton Variant="Variant.Outlined"
+    <MudButton Variant="Variant.Filled"
                Size="@Size.Small"
-               Color="Color.Default"
+               Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.Save"
                Disabled="@IsProcessing"
                OnClick="Save">
@@ -128,8 +128,9 @@ else
             var payload = result.Payload;
             if (!payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Add workflow error:\n{errorMessage}", Severity.Error);
+                foreach (var message in result.Payload.Messages)
+                    SnackBar.Add($"Add workflow error:\n{message}", Severity.Error);
+
                 return;
             }
             else

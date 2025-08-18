@@ -102,8 +102,9 @@ else
             var payload = workflowResult.Payload;
             if (!payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Get workflow error:\n{errorMessage}", Severity.Error);
+                foreach (var message in payload.Messages)
+                    SnackBar.Add($"Get workflow error:\n{message}", Severity.Error);
+
                 return;
             }
 
@@ -184,8 +185,9 @@ else
             var payload = result.Payload;
             if (!payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Update workflow error:\n{errorMessage}", Severity.Error);
+                foreach (var message in result.Payload.Messages)
+                    SnackBar.Add($"Update workflow error:\n{message}", Severity.Error);
+
                 return;
             }
             else

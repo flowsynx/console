@@ -51,7 +51,7 @@
                                     Size="Size.Small"
                                     OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton DisableElevation Variant="Variant.Outlined" 
+        <MudButton DisableElevation Variant="Variant.Filled" 
                                     StartIcon="@Icons.Material.Filled.Save"
                                     Color="Color.Primary" 
                                     Disabled="@IsProcessing"
@@ -131,8 +131,9 @@
             var payload = result.Payload;
             if (!payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Update plugin error:\n{errorMessage}", Severity.Error);
+                foreach (var message in result.Payload.Messages)
+                    SnackBar.Add($"Update plugin error:\n{message}", Severity.Error);
+
                 return;
             }
             else

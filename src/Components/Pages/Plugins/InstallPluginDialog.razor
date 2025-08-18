@@ -42,7 +42,7 @@
                    Size="Size.Small"
                    OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton Variant="Variant.Outlined"
+        <MudButton Variant="Variant.Filled"
                    StartIcon="@Icons.Material.Filled.Download"
                    Color="Color.Primary"
                    Disabled="@IsProcessing"
@@ -101,8 +101,9 @@
             var payload = result.Payload;
             if (!payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Install plugin error:\n{errorMessage}", Severity.Error);
+                foreach (var message in result.Payload.Messages)
+                    SnackBar.Add($"Install plugin error:\n{message}", Severity.Error);
+
                 return;
             }
             else

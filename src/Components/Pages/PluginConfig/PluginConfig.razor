@@ -30,27 +30,27 @@
     <HeaderContent>
         <MudTh>Name</MudTh>
         <MudTh>Type</MudTh>
+        <MudTh>Version</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Id">@context.Name</MudTd>
         <MudTd DataLabel="Name"><b>@context.Type</b></MudTd>
+        <MudTd DataLabel="Name"><b>@context.Version</b></MudTd>
         <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
             <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
-                <MudIconButton Icon="@Icons.Material.Outlined.Info" 
-                               Color="Color.Primary" 
-                               Size="@Size.Small"
-                               OnClick="@(() => PluginConfigDetails(context.Id))" />
-
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                               Color="Color.Primary" 
-                               Size="@Size.Small" 
-                               OnClick="@(() => UpdatePluginConfig(@context.Id))" />
-
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                               Color="Color.Error" 
-                               Size="@Size.Small" 
-                               OnClick="@(() => DeletePluginConfig(@context.Id, context.Name, @context.Type, @context.Version))" />
+                <MudTooltip Text="Edit plugin config">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                   Color="Color.Primary" 
+                                   Size="@Size.Small" 
+                                   OnClick="@(() => UpdatePluginConfig(@context.Id))" />
+                </MudTooltip>
+                <MudTooltip Text="Delete plugin config">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                   Color="Color.Error" 
+                                   Size="@Size.Small" 
+                                   OnClick="@(() => DeletePluginConfig(@context.Id, context.Name, @context.Type, @context.Version))" />
+                </MudTooltip>
             </MudToolBar>
         </MudTd>
     </RowTemplate>
@@ -187,27 +187,6 @@
         };
 
         var dialog = await DialogService.ShowAsync<UpdatePluginConfigDialog>("Update plugin configuration", parameters, options);
-        var dialogResult = await dialog.Result;
-        if (dialogResult != null && !dialogResult.Canceled)
-            await Refresh();
-    }
-
-    private async Task PluginConfigDetails(Guid id)
-    {
-        var options = new DialogOptions
-            {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                BackdropClick = true,
-                CloseOnEscapeKey = true,
-                BackgroundClass = "blur-dialog-background"
-            };
-
-        var parameters = new DialogParameters {
-            { "Id", id }
-        };
-
-        var dialog = await DialogService.ShowAsync<PluginConfigDetailsDialog>("Plugin configuration details", parameters, options);
         var dialogResult = await dialog.Result;
         if (dialogResult != null && !dialogResult.Canceled)
             await Refresh();

@@ -38,20 +38,18 @@
         <MudTd DataLabel="Description">@context.Description</MudTd>
         <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
             <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
-                <MudIconButton Icon="@Icons.Material.Outlined.Info"
-                               Color="Color.Primary"
-                               Size="@Size.Small"
-                               OnClick="@(() => PluginDetails(context.Id))" />
-
-                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                               Color="Color.Primary"
-                               Size="@Size.Small"
-                               OnClick="@(() => UpdatePlugin(@context.Type, @context.Version))" />
-
-                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                               Color="Color.Error"
-                               Size="@Size.Small"
-                               OnClick="@(() => UninstallPlugin(@context.Type, @context.Version))" />
+                <MudTooltip Text="Edit plugin">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="@Size.Small"
+                                   OnClick="@(() => UpdatePlugin(@context.Type, @context.Version))" />
+                </MudTooltip>
+                <MudTooltip Text="Delete plugin">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="@Size.Small"
+                                   OnClick="@(() => UninstallPlugin(@context.Type, @context.Version))" />
+                </MudTooltip>
             </MudToolBar>
         </MudTd>
     </RowTemplate>
@@ -183,27 +181,6 @@
         };
 
         var dialog = await DialogService.ShowAsync<UpdatePluginDialog>("Update plugin", parameters, options);
-        var dialogResult = await dialog.Result;
-        if (dialogResult != null && !dialogResult.Canceled)
-            await Refresh();
-    }
-
-    private async Task PluginDetails(Guid id)
-    {
-        var options = new DialogOptions
-            {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                BackdropClick = true,
-                CloseOnEscapeKey = true,
-                BackgroundClass = "blur-dialog-background"
-            };
-
-        var parameters = new DialogParameters {
-            { "Id", id }
-        };
-
-        var dialog = await DialogService.ShowAsync<PluginDetailsDialog>("Plugin details", parameters, options);
         var dialogResult = await dialog.Result;
         if (dialogResult != null && !dialogResult.Canceled)
             await Refresh();

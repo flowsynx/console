@@ -67,10 +67,10 @@ h1:focus {
 }
 
 .breadcrumbs-custom {
-    margin-left: 20px;
+    margin-left: 36px;
     padding: 3px;
     border-radius: 4px;
-    background-color: rgba(255, 255, 255, 0.15);
+    /*background-color: rgba(255, 255, 255, 0.15);*/
     color: var(--mud-palette-appbar-text) !important;
 }
 
@@ -84,10 +84,21 @@ h1:focus {
 
         .breadcrumbs-custom a:hover {
             border-radius: 4px;
-            border: 1px solid var(--mud-palette-appbar-text);
+            border: 1px solid color-mix(in srgb, var(--mud-palette-background) 60%, var(--mud-palette-primary));
         }
+
+.mud-breadcrumb-item.mud-disabled > a {
+    color: color-mix(in srgb, var(--mud-palette-background) 60%, var(--mud-palette-primary));
+}
 
 .mud-breadcrumb-separator {
     padding: 0px 6px;
     color: var(--mud-palette-appbar-text) !important;
+}
+    .mud-breadcrumb-separator span {
+        color: var(--mud-palette-appbar-text) !important;
+    }
+
+.mud-button-outlined {
+    border: 1px solid var(--mud-palette-lines-default) !important;
 }

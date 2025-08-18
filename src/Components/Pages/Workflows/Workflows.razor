@@ -39,15 +39,30 @@
         <MudTd DataLabel="Modified Date"><b>@context.ModifiedDate</b></MudTd>
         <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
             <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                               Color="Color.Primary" 
-                               Size="@Size.Small" 
-                               OnClick="@(() => UpdateWorkflow(@context.Id))" />
-
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                               Color="Color.Error" 
-                               Size="@Size.Small" 
-                               OnClick="@(() => DeleteWorkflow(@context.Id, context.Name))" />
+                <MudTooltip Text="Execute workflow">
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayCircleFilled"
+                                   Color="Color.Default"
+                                   Size="@Size.Small"
+                                   OnClick="@(() => ExecuteWorkflow(@context.Id))" />
+                </MudTooltip>
+                <MudTooltip Text="Triggers">
+                    <MudIconButton Icon="@Icons.Material.Filled.Bolt"
+                                   Color="Color.Info"
+                                   Size="@Size.Small"
+                                   OnClick="@(() => UpdateWorkflow(@context.Id))" />
+                </MudTooltip>
+                <MudTooltip Text="Edit workflow">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                   Color="Color.Primary" 
+                                   Size="@Size.Small" 
+                                   OnClick="@(() => UpdateWorkflow(@context.Id))" />
+                </MudTooltip>
+                <MudTooltip Text="Delete workflow">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                   Color="Color.Error" 
+                                   Size="@Size.Small" 
+                                   OnClick="@(() => DeleteWorkflow(@context.Id, context.Name))" />
+                </MudTooltip>
             </MudToolBar>
         </MudTd>
     </RowTemplate>
@@ -63,7 +78,6 @@
 </MudTable>
 
 @code {
-    private string? token;
     private MudTable<WorkflowListResponse>? _table;
 
     private async Task<TableData<WorkflowListResponse>> LoadData(
@@ -74,6 +88,7 @@
         {
             var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
 
+            string? token;
             if (string.IsNullOrEmpty(accessTokenResult))
                 token = "No token available or user not authenticated.";
             else
@@ -153,5 +168,43 @@
     private void UpdateWorkflow(Guid id)
     {
         Navigation.NavigateTo($"/workflows/update/{id}");
+    }
+
+    private async Task ExecuteWorkflow(Guid id)
+    {
+        try
+        {
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            string? token;
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            var request = new ExecuteWorkflowRequest { WorkflowId = id };
+            var result = await FlowSynxClient.Workflows.ExecuteAsync(request);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to execute workflow: Bad response code.", Severity.Error);
+                return;
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Execute workflow error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return;
+        }
     }
 }

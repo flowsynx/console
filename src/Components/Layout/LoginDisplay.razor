@@ -4,21 +4,21 @@
     <Authorized>
         <MudMenu StartIcon="@Icons.Material.Filled.AccountCircle"
                  Color="Color.Inherit"
-                 Variant="Variant.Text"
+                 Variant="Variant.Outlined"
                  Label="@context.User.Identity?.Name"
                  AnchorOrigin="Origin.BottomRight"
                  TransformOrigin="Origin.TopRight"
-                 Class="ml-3">
+                 Class="ml-2 mr-2">
             <MudMenuItem OnClick="Logout">Log out</MudMenuItem>
         </MudMenu>
     </Authorized>
 
     <NotAuthorized>
-        <MudButton Variant="Variant.Text"
+        <MudButton Variant="Variant.Outlined"
                    Color="Color.Inherit"
                    OnClick="Login"
                    StartIcon="@Icons.Material.Filled.Login"
-                   Class="ml-3">
+                   Class="ml-2 mr-2">
             Log in
         </MudButton>
     </NotAuthorized>

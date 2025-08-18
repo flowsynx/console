@@ -17,11 +17,11 @@
         <MudText>
             <strong>Are you sure you want to delete this workflow?</strong>
             <br /><br />
-            <strong>Config name:</strong> @WorkflowName
+            <strong>Workflow name:</strong> @WorkflowName
             <br /><br />
             <MudCard Outlined="true" Class="pa-3 mx-auto">
                 <MudText Color="Color.Warning" Typo="Typo.subtitle2">
-                    ⚠️ Warning: Deleting this plugin configuration will permanently delete all related data and settings. Any workflows depending on these configuration will fail to execute properly. Please ensure you have backed up any important information before proceeding.
+                    ⚠️ Warning: Deleting this workflow will permanently remove the workflow along with all related triggers, execution details, and history. Any processes or tasks depending on this workflow will no longer function. Please ensure you have backed up any important information before proceeding.
                 </MudText>
             </MudCard>
         </MudText>
@@ -36,7 +36,7 @@
 
         <MudButton Color="Color.Error" 
                    StartIcon="@Icons.Material.Filled.DeleteForever"
-                   Variant="Variant.Outlined" 
+                   Variant="Variant.Filled" 
                    Disabled="@IsProcessing"
                    Size="Size.Small"
                    OnClick="Delete">@(IsProcessing ? "Deleting..." : "Delete")</MudButton>
@@ -96,8 +96,9 @@
             var payload = result.Payload;
             if (!payload.Succeeded)
             {
-                var errorMessage = string.Join(Environment.NewLine, payload.Messages);
-                SnackBar.Add($"Delete workflow error:\n{errorMessage}", Severity.Error);
+                foreach (var message in result.Payload.Messages)
+                    SnackBar.Add($"Delete workflow error:\n{message}", Severity.Error);
+
                 return;
             }
             else
