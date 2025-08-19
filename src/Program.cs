@@ -1,6 +1,5 @@
 using Console.Components;
 using Console.Extensions;
-using Console.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,8 +30,9 @@ builder.Services
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddOpenIdAuthentication(config);
-builder.Services.AddAuthorizationCore();
+builder.Services.AddOpenIdAuthentication(config)
+                .AddTokenRefresh()
+                .AddAuthorizationCore();
 
 var app = builder.Build();
 

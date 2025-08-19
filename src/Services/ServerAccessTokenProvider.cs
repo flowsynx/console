@@ -1,21 +1,21 @@
-﻿using Microsoft.AspNetCore.Authentication;
-
-namespace Console.Services;
+﻿namespace Console.Services;
 
 public class ServerAccessTokenProvider : IAccessTokenProvider
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextAccessor _contextAccessor;
+    private readonly ITokenRefreshService _refreshService;
 
-    public ServerAccessTokenProvider(IHttpContextAccessor httpContextAccessor)
+    public ServerAccessTokenProvider(
+        IHttpContextAccessor contextAccessor,
+        ITokenRefreshService refreshService)
     {
-        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _contextAccessor = contextAccessor;
+        _refreshService = refreshService;
     }
 
     public async Task<string?> GetAccessTokenAsync()
     {
-        if (_httpContextAccessor.HttpContext == null)
-            throw new InvalidOperationException("HttpContext is not available.");
-        
-        return await _httpContextAccessor.HttpContext.GetTokenAsync("access_token");
+        var context = _contextAccessor.HttpContext!;
+        return await _refreshService.GetAccessTokenAsync(context);
     }
 }

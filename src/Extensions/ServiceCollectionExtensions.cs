@@ -43,6 +43,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddMudBlazor(this IServiceCollection services) =>
         services.AddMudServices(ConfigureMudSnackbar);
 
+    public static IServiceCollection AddTokenRefresh(this IServiceCollection services)
+    {
+        services.AddHttpClient();
+        services.AddScoped<ITokenRefreshService, TokenRefreshService>();
+        return services;
+    }
+
     public static IServiceCollection AddOpenIdAuthentication(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -52,7 +59,7 @@ public static class ServiceCollectionExtensions
             .Get<OpenIdConnectConfiguration>() ?? new();
 
         services.AddSingleton(openIdConfig);
-
+        
         services
             .AddAuthentication(options =>
             {
@@ -96,13 +103,16 @@ public static class ServiceCollectionExtensions
         options.ResponseType = "code";
         options.CallbackPath = config.RedirectUri;
         options.SaveTokens = true;
-        options.UseTokenLifetime = true;
+        options.UseTokenLifetime = false;
+        options.RefreshOnIssuerKeyNotFound = true;
         options.RequireHttpsMetadata = config.RequireHttps;
+        options.RefreshInterval = TimeSpan.FromMinutes(5);
 
         options.Scope.Clear();
         options.Scope.Add("openid");
         options.Scope.Add("profile");
         options.Scope.Add("email");
+        options.Scope.Add("offline_access");
 
         options.GetClaimsFromUserInfoEndpoint = true;
         options.TokenValidationParameters = new TokenValidationParameters
