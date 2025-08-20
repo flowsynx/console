@@ -102,3 +102,19 @@ h1:focus {
 .mud-button-outlined {
     border: 1px solid var(--mud-palette-lines-default) !important;
 }
+
+.internal-toolbar-height {
+    --mud-internal-toolbar-height: 0 !important;
+}
+
+.mud-table .action-cell .actions-toolbar {
+    display: flex;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* show only when hovering row */
+.mud-table tr:hover .action-cell .actions-toolbar {
+    display: flex;
+    opacity: 1;
+}

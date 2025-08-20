@@ -22,6 +22,7 @@
           Hover="true"
           Bordered="false"
           Striped="false"
+          OnRowClick="ManageWorkflow"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
         <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
@@ -35,35 +36,23 @@
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Modified Date"><b>@context.ModifiedDate</b></MudTd>
-        <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
-            <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
-                <MudTooltip Text="Execute workflow">
-                    <MudIconButton Icon="@Icons.Material.Filled.PlayCircleFilled"
-                                   Color="Color.Default"
-                                   Size="@Size.Small"
-                                   OnClick="@(() => ExecuteWorkflow(@context.Id))" />
-                </MudTooltip>
-                <MudTooltip Text="Triggers">
-                    <MudIconButton Icon="@Icons.Material.Filled.Bolt"
-                                   Color="Color.Info"
-                                   Size="@Size.Small"
-                                   OnClick="@(() => UpdateWorkflow(@context.Id))" />
-                </MudTooltip>
-                <MudTooltip Text="Edit workflow">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                                   Color="Color.Primary" 
-                                   Size="@Size.Small" 
-                                   OnClick="@(() => UpdateWorkflow(@context.Id))" />
-                </MudTooltip>
-                <MudTooltip Text="Delete workflow">
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                                   Color="Color.Error" 
-                                   Size="@Size.Small" 
-                                   OnClick="@(() => DeleteWorkflow(@context.Id, context.Name))" />
-                </MudTooltip>
-            </MudToolBar>
+        <MudTd Class="cursor-pointer" DataLabel="Name">@context.Name</MudTd>
+        <MudTd Class="cursor-pointer" DataLabel="Modified Date"><b>@context.ModifiedDate</b></MudTd>
+        <MudTd Class="cursor-pointer action-cell"
+               Style="margin: 0px !important; padding:0px !important; text-align: right;">
+            <div class="justify-end w-100 actions-toolbar mr-2">
+                <MudToolBar Dense="true"
+                            Gutters="false"
+                            Class="internal-toolbar-height"
+                            Style="text-align: right;">
+                    <MudTooltip Text="Manage and execute workflow">
+                        <MudIconButton Icon="@Icons.Material.Filled.EditNote"
+                                       Color="Color.Primary"
+                                       Size="@Size.Small"
+                                       OnClick="@(() => ManageWorkflow(@context.Id))" />
+                    </MudTooltip>
+                </MudToolBar>
+            </div>
         </MudTd>
     </RowTemplate>
     <NoRecordsContent>
@@ -81,7 +70,7 @@
     private MudTable<WorkflowListResponse>? _table;
 
     private async Task<TableData<WorkflowListResponse>> LoadData(
-        TableState state, 
+        TableState state,
         CancellationToken cancellationToken)
     {
         try
@@ -165,9 +154,17 @@
             await Refresh();
     }
 
-    private void UpdateWorkflow(Guid id)
+    private void ManageWorkflow(TableRowClickEventArgs<WorkflowListResponse> workflow)
     {
-        Navigation.NavigateTo($"/workflows/update/{id}");
+        if (workflow.Item == null)
+            return;
+
+        Navigation.NavigateTo($"/workflows/{workflow.Item.Id}/manage");
+    }
+
+    private void ManageWorkflow(Guid id)
+    {
+        Navigation.NavigateTo($"/workflows/{id}/manage");
     }
 
     private async Task ExecuteWorkflow(Guid id)

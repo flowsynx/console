@@ -1,20 +1,31 @@
 ﻿<MudNavMenu Dense="true">
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="/"
+                Match="NavLinkMatch.All"
+                Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudDivider />
-    <MudNavLink Href="/plugins" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.GridView">Installed Plugins</MudNavLink>
+    <MudNavLink Href="/plugins"
+                Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.GridView">Installed Plugins</MudNavLink>
     <MudDivider />
-    <MudNavLink Href="/pluginconfig" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Settings">Plugins Config</MudNavLink>
+    <MudNavLink Href="/pluginconfig"
+                Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.Settings">Plugins Config</MudNavLink>
     <MudDivider />
-    <MudNavGroup Title="Workflows" Icon="@Icons.Material.Filled.DeviceHub">
-        <MudNavLink Href="/workflows" Icon="@Icons.Material.Filled.ListAlt">Workflows List</MudNavLink>
-        <MudNavLink Href="/workflows/executions" Icon="@Icons.Material.Filled.PlayCircleFilled">Executions</MudNavLink>
-    </MudNavGroup>
+    <MudNavLink Href="/workflows"
+                Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.ListAlt">Workflows List</MudNavLink>
     <MudDivider />
-    <MudNavLink Href="/logs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ReceiptLong">Logs</MudNavLink>
+    <MudNavLink Href="/logs"
+                Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.ReceiptLong">Logs</MudNavLink>
     <MudDivider />
-    <MudNavLink Href="/health" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.HealthAndSafety">Health</MudNavLink>
+    <MudNavLink Href="/health"
+                Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.HealthAndSafety">Health</MudNavLink>
     <MudDivider />
-    <MudNavLink Href="/version" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Info">Version</MudNavLink>
+    <MudNavLink Href="/version"
+                Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.Info">Version</MudNavLink>
 </MudNavMenu>
 
 @code {

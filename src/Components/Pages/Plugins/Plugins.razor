@@ -36,21 +36,26 @@
         <MudTd DataLabel="Type"><b>@context.Type</b></MudTd>
         <MudTd DataLabel="Version"><b>@context.Version</b></MudTd>
         <MudTd DataLabel="Description">@context.Description</MudTd>
-        <MudTd Style="margin: 0px !important; padding:0px !important; text-align: right;">
-            <MudToolBar Elevation="15" Dense="true" Style="text-align: right; margin: 0px !important; padding:0px !important">
-                <MudTooltip Text="Edit plugin">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                   Color="Color.Primary"
-                                   Size="@Size.Small"
-                                   OnClick="@(() => UpdatePlugin(@context.Type, @context.Version))" />
-                </MudTooltip>
-                <MudTooltip Text="Delete plugin">
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                   Color="Color.Error"
-                                   Size="@Size.Small"
-                                   OnClick="@(() => UninstallPlugin(@context.Type, @context.Version))" />
-                </MudTooltip>
-            </MudToolBar>
+        <MudTd Class="action-cell" Style="margin: 0px !important; padding:0px !important; text-align: right;">
+            <div class="justify-end w-100 actions-toolbar mr-2">
+                <MudToolBar Dense="true"
+                            Gutters="false"
+                            Class="internal-toolbar-height"
+                            Style="text-align: right;">
+                    <MudTooltip Text="Edit plugin">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Color="Color.Primary"
+                                       Size="@Size.Small"
+                                       OnClick="@(() => UpdatePlugin(@context.Type, @context.Version))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Delete plugin">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Size="@Size.Small"
+                                       OnClick="@(() => UninstallPlugin(@context.Type, @context.Version))" />
+                    </MudTooltip>
+                </MudToolBar>
+            </div>
         </MudTd>
     </RowTemplate>
     <NoRecordsContent>
