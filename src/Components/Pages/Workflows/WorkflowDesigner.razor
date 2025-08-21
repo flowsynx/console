@@ -6,9 +6,14 @@
 
 <div class="designer-root">
     <div class="palette-container">
-        <MudButton Size="Size.Small"
-                   Class="palette-toggle"
-                   OnClick="@TogglePalette">Plugins</MudButton>
+        <MudTooltip Text="@(IsPaletteVisible ? "Close panel" : "Open panel and add plugins")">
+            <MudIconButton Variant="Variant.Filled"
+                           Size="Size.Medium"
+                           Icon="@(IsPaletteVisible ? Icons.Material.Filled.Close : Icons.Material.Filled.Add)"
+                           Color="Color.Primary"
+                           Class="palette-toggle"
+                           OnClick="TogglePalette" />
+        </MudTooltip>
 
         <!-- Palette -->
         <div class="palette @(IsPaletteVisible ? "visible" : "hidden")">
@@ -52,7 +57,7 @@
     private string _newKey;
     private string _newValue;
     private DotNetObjectReference<WorkflowDesigner> _selfRef;
-    private bool IsPaletteVisible = true;
+    private bool IsPaletteVisible = false;
 
     private void TogglePalette()
     {

@@ -17,12 +17,10 @@
     width: 100%;
 }
 
-/* Canvas fills the container */
 .canvas-wrap {
     width: 100%;
     height: 100%;
     background-color: var(--mud-palette-background);
-    border: 1px solid var(--mud-palette-lines-default);
     border-radius: 5px;
     position: relative;
     overflow: hidden;
@@ -31,23 +29,21 @@
 .palette-container {
     position: absolute;
     top: 0;
-    left: 0;
+    right: 0;
     height: 100%;
     display: flex;
     align-items: flex-start;
 }
 
 .palette {
-    width: 280px;
+    width: 300px;
     height: 100%;
-    top: 0px;
-    left: 32px !important;
+    top: 0;
+    right: 0px !important;
     background: var(--mud-palette-background);
     border: 1px solid var(--mud-palette-lines-default);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     align-items: center;
     justify-content: center;
-    transform: translateX(calc(-32px));
     opacity: 0.7;
     transition: transform 0.75s ease, opacity 0.5s ease;
     z-index: 29;
@@ -56,37 +52,40 @@
 }
 
     .palette.hidden {
-        transform: translateX(-32px);
         opacity: 0;
+        z-index: 0;
     }
 
     .palette.visible {
-        transform: translateX(0);
         opacity: 1;
+        z-index: 29;
     }
 
 .palette-toggle {
-    position: absolute;
+    top: 8px;
+    right: 8px;
     z-index: 30;
-    height: 100%;
-    min-width: 12px !important;
-    background: var(--mud-palette-background);
     border: 1px solid var(--mud-palette-lines-default);
+    -moz-border-radius: 50% !important;
+    -webkit-border-radius: 50% !important;
+    border-radius: 50% !important;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    writing-mode: vertical-lr;
-    font-weight:bold;
 }
 
     .palette-toggle:hover {
         background: var(--mud-palette-background);
     }
 
+    .palette-toggle.move-left {
+        right: auto;
+        left: 1rem;
+        background: #dc3545;
+    }
+
 .toolbar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
+    padding-left: 2px;
+    background-color: var(--mud-palette-background);
+    border-bottom: 1px solid var(--mud-palette-lines-default);
 }
 
 #node-context-menu {
@@ -112,7 +111,7 @@
 .canvas-toolbar {
     position: absolute;
     top: 8px;
-    right: 8px;
+    left: 8px;
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -171,3 +170,23 @@
     padding: 3px;
     border-radius: 5px;
 }
+
+.exp-panels-bordered .mud-expand-panel {
+    border: 1px solid var(--mud-palette-lines-default) !important;
+    border-radius: var(--mud-default-borderradius) !important;
+    overflow: hidden;
+}
+
+    .exp-panels-bordered .mud-expand-panel + .mud-expand-panel {
+        margin-top: .75rem !important;
+    }
+
+    .exp-panels-bordered .mud-expand-panel .mud-expand-panel-header {
+        padding: 12px 16px !important;
+        background-color: var(--mud-palette-surface) !important;
+    }
+
+    .exp-panels-bordered .mud-expand-panel .mud-expand-panel-content {
+        border-top: 1px solid var(--mud-palette-lines-default) !important;
+        padding: 12px 16px 16px !important;
+    }

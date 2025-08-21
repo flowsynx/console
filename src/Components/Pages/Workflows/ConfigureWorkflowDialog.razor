@@ -1,0 +1,144 @@
+﻿@using FlowSynx.Client.Messages.Requests.PluginConfig
+@using FlowSynx.Client.Messages.Requests.Plugins
+@using FlowSynx.Client.Messages.Responses.PluginConfig
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using MudBlazor
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" /> Workflow Configuration
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudGrid>
+            <!-- DegreeOfParallelism -->
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="int?" For="@(() => Config.DegreeOfParallelism)"
+                                 @bind-Value="Config.DegreeOfParallelism"
+                                 Label="Degree Of Parallelism"
+                                 Variant="Variant.Text"
+                                 Margin="Margin.Dense"
+                                 HelperText="Max tasks to run in parallel" />
+            </MudItem>
+
+            <!-- Timeout -->
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="int?" For="@(() => Config.Timeout)"
+                                 @bind-Value="Config.Timeout"
+                                 Label="Timeout (ms)"
+                                 Required="true"
+                                 Variant="Variant.Text"
+                                 Margin="Margin.Dense"
+                                 HelperText="Workflow timeout in milliseconds" />
+            </MudItem>
+
+            <!-- ErrorHandling Section -->
+            <MudItem xs="12">
+                <MudExpansionPanels Elevation="0" MultiExpansion="true"
+                                    Dense="true"
+                                    Outlined="false"
+                                    Class="exp-panels-bordered">
+                    <MudExpansionPanel Text="Error Handling">
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField For="@(() => Config.ErrorHandling!.Strategy)"
+                                              @bind-Value="Config.ErrorHandling!.Strategy"
+                                              Label="Strategy"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              HelperText="Example: Stop, Continue, Retry" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudExpansionPanel>
+
+                    <!-- RetryPolicy Section -->
+                    <MudExpansionPanel Text="Retry Policy">
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="int" For="@(() => Config.ErrorHandling!.RetryPolicy!.MaxRetries)"
+                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.MaxRetries"
+                                                 Label="Max Retries"
+                                                 Variant="Variant.Text"
+                                                 Margin="Margin.Dense" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6">
+                                <MudTextField For="@(() => Config.ErrorHandling!.RetryPolicy!.BackoffStrategy)"
+                                              @bind-Value="Config.ErrorHandling!.RetryPolicy!.BackoffStrategy"
+                                              Label="Backoff Strategy"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              HelperText="Fixed, Exponential, etc." />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="int" For="@(() => Config.ErrorHandling!.RetryPolicy!.InitialDelay)"
+                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.InitialDelay"
+                                                 Label="Initial Delay (ms)"
+                                                 Variant="Variant.Text"
+                                                 Margin="Margin.Dense" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="int" For="@(() => Config.ErrorHandling!.RetryPolicy!.MaxDelay)"
+                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.MaxDelay"
+                                                 Label="Max Delay (ms)"
+                                                 Variant="Variant.Text"
+                                                 Margin="Margin.Dense" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="double" For="@(() => Config.ErrorHandling!.RetryPolicy!.BackoffCoefficient)"
+                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.BackoffCoefficient"
+                                                 Label="Backoff Coefficient"
+                                                 Variant="Variant.Text"
+                                                 Margin="Margin.Dense" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small"
+                   OnClick="Cancel">Cancel</MudButton>
+
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Color="Color.Primary"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small">@(IsProcessing ? "Updating..." : "Update")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public WorkflowConfiguration Config { get; set; } = new();
+
+    private bool IsProcessing = false;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override void OnInitialized()
+    {
+        // Ensure nested objects are initialized
+        Config.ErrorHandling ??= new ErrorHandling();
+        Config.ErrorHandling.RetryPolicy ??= new RetryPolicy();
+    }
+}
