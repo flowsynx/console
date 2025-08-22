@@ -132,27 +132,7 @@
         Navigation.NavigateTo("/workflows/add");
     }
 
-    private async Task DeleteWorkflow(Guid id, string workflowName)
-    {
-        var options = new DialogOptions
-            {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                BackdropClick = false,
-                CloseOnEscapeKey = false,
-                BackgroundClass = "blur-dialog-background"
-            };
 
-        var parameters = new DialogParameters {
-            { "Id", id },
-            { "WorkflowName", workflowName }
-        };
-
-        var dialog = await DialogService.ShowAsync<DeleteWorkflowDialog>("Delete workflow", parameters, options);
-        var dialogResult = await dialog.Result;
-        if (dialogResult != null && !dialogResult.Canceled)
-            await Refresh();
-    }
 
     private void ManageWorkflow(TableRowClickEventArgs<WorkflowListResponse> workflow)
     {
@@ -165,43 +145,5 @@
     private void ManageWorkflow(Guid id)
     {
         Navigation.NavigateTo($"/workflows/{id}/manage");
-    }
-
-    private async Task ExecuteWorkflow(Guid id)
-    {
-        try
-        {
-            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
-
-            string? token;
-            if (string.IsNullOrEmpty(accessTokenResult))
-                token = "No token available or user not authenticated.";
-            else
-                token = accessTokenResult;
-
-            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
-            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
-
-            var request = new ExecuteWorkflowRequest { WorkflowId = id };
-            var result = await FlowSynxClient.Workflows.ExecuteAsync(request);
-
-            if (result.StatusCode != 200)
-            {
-                SnackBar.Add("Failed to execute workflow: Bad response code.", Severity.Error);
-                return;
-            }
-
-            if (!result.Payload.Succeeded)
-            {
-                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
-                SnackBar.Add($"Execute workflow error:\n{errorMessage}", Severity.Error);
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
-            return;
-        }
     }
 }

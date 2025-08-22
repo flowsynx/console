@@ -1,5 +1,6 @@
 ﻿@page "/workflows/{id:guid}/manage"
 @using FlowSynx.Client.Messages.Requests.Workflows
+@using FlowSynx.Client.Messages.Responses.Workflows
 @inject IWorkflowService WorkflowService
 @inject IJSRuntime JSRuntime
 
@@ -7,57 +8,83 @@
 @inject IAccessTokenProvider TokenProvider
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 
-<PageTitle>FlowSynx Workflow designer</PageTitle>
-
+<PageTitle>FlowSynx manage workflow</PageTitle>
 <HeaderTitle Title="Workflow designer" Description="A visual interface to create, edit, and manage workflow." />
 
-<MudStack Row="true" Spacing="2" Class="">
-    <MudButton Variant="Variant.Outlined"
-               Size="@Size.Small"
-               Color="Color.Default"
-               StartIcon="@Icons.Material.Filled.Save"
-               Disabled="@IsProcessing"
-               OnClick="Save">
-        Save
-    </MudButton>
-
-    <MudButton Variant="Variant.Outlined"
-               Size="@Size.Small"
-               Color="Color.Default"
-               Disabled="@IsProcessing"
-               OnClick="ToggleMode">
-        @(_jsonMode ? "Switch to Designer" : "Switch to JSON")
-    </MudButton>
-
-    <MudButton Variant="Variant.Outlined"
-               Size="@Size.Small"
-               Color="Color.Default"
-               Disabled="@IsProcessing"
-               OnClick="ExportJson">
-        Export JSON
-    </MudButton>
-
-    <MudButton Variant="Variant.Outlined"
-               Size="@Size.Small"
-               Color="Color.Default"
-               Disabled="@IsProcessing"
-               OnClick="ImportJson">
-        Import JSON
-    </MudButton>
-</MudStack>
-
-<MudDivider Class="my-2" />
-
-@if (!_jsonMode)
-{
-    <WorkflowDesigner Workflow="@Workflow" />
-}
-else
-{
-    <WorkflowJsonEditor JsonContent="@_workflowJson" JsonContentChanged="v => _workflowJson = v" />
-}
+<MudTabs Outlined="true"
+         Position="Position.Top"
+         Rounded="true"
+         Border="true"
+         ApplyEffectsToContainer="true"
+         Class="mb-4">
+    <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.DesignServices">
+        <MudToolBar Dense="true" Gutters="false" Class="toolbar">
+            <MudTooltip Text="Save workflow">
+                <MudButton Variant="Variant.Filled"
+                               Size="@Size.Medium"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               Disabled="@IsProcessing"
+                               OnClick="Save">
+                               Save
+                </MudButton>
+            </MudTooltip>
+            <MudTooltip Text="@(CurrentView == View.Code ? "Switch to Designer" : "Switch to JSON")">
+                <MudIconButton Variant="Variant.Text"
+                               Size="@Size.Medium"
+                               Color="Color.Default"
+                               Disabled="@IsProcessing"
+                               Icon="@(CurrentView == View.Code ? Icons.Material.Filled.DesignServices : Icons.Material.Filled.Code)"
+                               OnClick="ToggleCodeDesigner">
+                </MudIconButton>
+            </MudTooltip>
+            @if (CurrentView == View.Designer)
+            {
+                <MudTooltip Text="Configure workflow">
+                    <MudIconButton Variant="Variant.Text"
+                                   Size="@Size.Medium"
+                                   Color="Color.Default"
+                                   Disabled="@IsProcessing"
+                                   Icon="@Icons.Material.Filled.Settings"
+                                   OnClick="ConfigureWorkflow">
+                    </MudIconButton>
+                </MudTooltip>
+            }
+            <MudSpacer />
+            <MudTooltip Text="Delete workflow">
+                <MudButton Variant="Variant.Filled"
+                           Size="@Size.Medium"
+                           Color="Color.Error"
+                           Disabled="@IsProcessing"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Class="mr-1"
+                           OnClick="DeleteWorkflow">
+                    Delete
+                </MudButton>
+            </MudTooltip>
+            <MudTooltip Text="Execute workflow">
+                <MudButton Variant="Variant.Filled"
+                               Size="@Size.Medium"
+                               Color="Color.Primary"
+                               Disabled="@IsProcessing"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                           OnClick="ExecuteWorkflow">
+                               Execute
+                </MudButton>
+            </MudTooltip>
+        </MudToolBar>
+        @RenderCurrentView()
+    </MudTabPanel>
+    <MudTabPanel Text="Executions" Icon="@Icons.Material.Filled.PlayArrow">
+        <MudText>Content Two</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Triggers" Icon="@Icons.Material.Filled.Bolt">
+        <MudText>Content Three</MudText>
+    </MudTabPanel>
+</MudTabs>
 
 @code {
     [Parameter]
@@ -65,13 +92,12 @@ else
 
     private bool IsProcessing = false;
     private Workflow Workflow => WorkflowService.Get();
-    private bool _jsonMode;
     private string? _workflowJson;
-    private UpdateWorkflowRequest UpdateWorkflowRequest = new UpdateWorkflowRequest 
-    { 
-        Id = Guid.Empty , 
-        Definition = "" 
-    };
+    private UpdateWorkflowRequest UpdateWorkflowRequest = new UpdateWorkflowRequest
+            {
+                Id = Guid.Empty,
+                Definition = ""
+            };
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,17 +113,17 @@ else
             if (string.IsNullOrEmpty(accessTokenResult))
             {
                 SnackBar.Add("No token available or user not authenticated.", Severity.Error);
-                return;
+                Navigation.NavigateTo("/workflows", true);
             }
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(accessTokenResult);
 
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
-            var workflowResult = await FlowSynxClient.Workflows.DetailsAsync(new WorkflowDetailsRequest{ Id = id });
+            var workflowResult = await FlowSynxClient.Workflows.DetailsAsync(new WorkflowDetailsRequest { Id = id });
 
             if (workflowResult.StatusCode != 200)
             {
                 SnackBar.Add("Server error while fetching the workflow.", Severity.Error);
-                return;
+                Navigation.NavigateTo("/workflows", true);
             }
             var payload = workflowResult.Payload;
             if (!payload.Succeeded)
@@ -105,7 +131,7 @@ else
                 foreach (var message in payload.Messages)
                     SnackBar.Add($"Get workflow error:\n{message}", Severity.Error);
 
-                return;
+                Navigation.NavigateTo("/workflows", true);
             }
 
             _workflowJson = payload.Data.Workflow;
@@ -113,7 +139,9 @@ else
         }
         catch (Exception ex)
         {
+            SnackBar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
             SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+            Navigation.NavigateTo("/workflows", true);
         }
         finally
         {
@@ -121,25 +149,34 @@ else
         }
     }
 
-    private void ToggleMode()
+    private View CurrentView { get; set; } = View.Designer;
+
+    private void SwitchView(View view)
     {
-        _jsonMode = !_jsonMode;
-        if (_jsonMode)
-            _workflowJson = WorkflowService.GetJson();
+        CurrentView = view;
     }
 
-    private void ExportJson()
+    private RenderFragment RenderCurrentView() => CurrentView switch
     {
-        _workflowJson = WorkflowService.GetJson();
-        _jsonMode = true;
-    }
+        View.Code => @<WorkflowJsonEditor JsonContent="@_workflowJson"
+                    JsonContentChanged="v => _workflowJson = v" />,
+        View.Designer => @<WorkflowDesigner Workflow="@Workflow" />,
+        _ => @<p>Unknown view</p>
+    };
 
-    private void ImportJson()
+    private void ToggleCodeDesigner()
     {
-        if (!string.IsNullOrWhiteSpace(_workflowJson))
+        CurrentView = CurrentView == View.Code ? View.Designer : View.Code;
+        if (CurrentView == View.Code)
         {
-            WorkflowService.SetJson(_workflowJson);
-            _jsonMode = false;
+            _workflowJson = WorkflowService.GetJson();
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(_workflowJson))
+            {
+                WorkflowService.SetJson(_workflowJson);
+            }
         }
     }
 
@@ -159,7 +196,7 @@ else
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
 
-            if (_jsonMode)
+            if (CurrentView == View.Code)
             {
                 if (string.IsNullOrWhiteSpace(_workflowJson))
                 {
@@ -204,5 +241,95 @@ else
         {
             IsProcessing = false;
         }
+    }
+
+    private async Task ConfigureWorkflow()
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "Name", Workflow.Name },
+            { "Description", Workflow.Description },
+            { "Config", Workflow.Configuration }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfigureWorkflowDialog>("Configure workflow", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            Workflow.Configuration = (WorkflowConfiguration)dialogResult.Data;
+    }
+
+    private async Task DeleteWorkflow()
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "Id", id },
+            { "WorkflowName", Workflow.Name },
+            { "WorkflowDescription", Workflow.Description }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteWorkflowDialog>("Delete workflow", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            Navigation.NavigateTo("/workflows", true);
+    }
+
+    private async Task ExecuteWorkflow()
+    {
+        try
+        {
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            string? token;
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            var request = new ExecuteWorkflowRequest { WorkflowId = id };
+            var result = await FlowSynxClient.Workflows.ExecuteAsync(request);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to execute workflow: Bad response code.", Severity.Error);
+                return;
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Execute workflow error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return;
+        }
+    }
+
+    private enum View
+    {
+        Code,
+        Designer
     }
 }

@@ -10,7 +10,7 @@
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 
-<PageTitle>FlowSynx Workflow designer</PageTitle>
+<PageTitle>FlowSynx add workflow</PageTitle>
 <HeaderTitle Title="Workflow designer" Description="A visual interface to create, edit, and manage workflow." />
 
 <MudTabs Outlined="true" Position="Position.Top" Rounded="true" Border="true"
@@ -18,13 +18,14 @@
     <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.DesignServices">
         <MudToolBar Dense="true" Gutters="false" Class="toolbar">
             <MudTooltip Text="Save workflow">
-                <MudIconButton Variant="Variant.Text"
+                <MudButton Variant="Variant.Filled"
                                Size="@Size.Medium"
                                Color="Color.Primary"
-                               Icon="@Icons.Material.Filled.Save"
+                               StartIcon="@Icons.Material.Filled.Save"
                                Disabled="@IsProcessing"
                                OnClick="Save">
-                </MudIconButton>
+                               Save
+                </MudButton>
             </MudTooltip>
             <MudTooltip Text="@(CurrentView == View.Code ? "Switch to Designer" : "Switch to JSON")">
                 <MudIconButton Variant="Variant.Text"
@@ -49,12 +50,6 @@
             }
         </MudToolBar>
         @RenderCurrentView()
-    </MudTabPanel>
-    <MudTabPanel Text="Executions" Icon="@Icons.Material.Filled.PlayArrow">
-        <MudText>Content Two</MudText>
-    </MudTabPanel>
-    <MudTabPanel Text="Triggers" Icon="@Icons.Material.Filled.Bolt">
-        <MudText>Content Three</MudText>
     </MudTabPanel>
 </MudTabs>
 
@@ -83,7 +78,16 @@
     {
         CurrentView = CurrentView == View.Code ? View.Designer : View.Code;
         if (CurrentView == View.Code)
+        {
             _workflowJson = WorkflowService.GetJson();
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(_workflowJson))
+            {
+                WorkflowService.SetJson(_workflowJson);
+            }
+        }
     }
 
     private async Task Save()
@@ -133,8 +137,9 @@
             }
             else
             {
+                var id = payload.Data.Id;
                 SnackBar.Add("Workflow added successfully!", Severity.Success);
-                Navigation.NavigateTo("/workflows", true);
+                Navigation.NavigateTo($"/workflows/{id.ToString()}/manage", true);
             }
         }
         catch (Exception ex)
@@ -159,6 +164,8 @@
             };
 
         var parameters = new DialogParameters {
+            { "Name", Workflow.Name },
+            { "Description", Workflow.Description },
             { "Config", Workflow.Configuration }
         };
 
