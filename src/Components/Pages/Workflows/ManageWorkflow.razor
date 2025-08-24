@@ -79,10 +79,10 @@
         @RenderCurrentView()
     </MudTabPanel>
     <MudTabPanel Text="Executions" Icon="@Icons.Material.Filled.PlayArrow">
-        <MudText>Content Two</MudText>
+        <Executions workflowId="@id" />
     </MudTabPanel>
     <MudTabPanel Text="Triggers" Icon="@Icons.Material.Filled.Bolt">
-        <MudText>Content Three</MudText>
+        <Triggers workflowId="@id" />
     </MudTabPanel>
 </MudTabs>
 
@@ -113,7 +113,7 @@
             if (string.IsNullOrEmpty(accessTokenResult))
             {
                 SnackBar.Add("No token available or user not authenticated.", Severity.Error);
-                Navigation.NavigateTo("/workflows", true);
+                Navigation.NavigateTo("/workflows");
             }
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(accessTokenResult);
 
@@ -123,7 +123,7 @@
             if (workflowResult.StatusCode != 200)
             {
                 SnackBar.Add("Server error while fetching the workflow.", Severity.Error);
-                Navigation.NavigateTo("/workflows", true);
+                Navigation.NavigateTo("/workflows");
             }
             var payload = workflowResult.Payload;
             if (!payload.Succeeded)
@@ -131,7 +131,7 @@
                 foreach (var message in payload.Messages)
                     SnackBar.Add($"Get workflow error:\n{message}", Severity.Error);
 
-                Navigation.NavigateTo("/workflows", true);
+                Navigation.NavigateTo("/workflows");
             }
 
             _workflowJson = payload.Data.Workflow;
@@ -139,9 +139,8 @@
         }
         catch (Exception ex)
         {
-            SnackBar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
             SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
-            Navigation.NavigateTo("/workflows", true);
+            Navigation.NavigateTo("/workflows");
         }
         finally
         {
@@ -230,7 +229,7 @@
             else
             {
                 SnackBar.Add("Workflow updated successfully!", Severity.Success);
-                Navigation.NavigateTo("/workflows", true);
+                Navigation.NavigateTo("/workflows");
             }
         }
         catch (Exception ex)
@@ -286,7 +285,7 @@
         var dialog = await DialogService.ShowAsync<DeleteWorkflowDialog>("Delete workflow", parameters, options);
         var dialogResult = await dialog.Result;
         if (dialogResult != null && !dialogResult.Canceled)
-            Navigation.NavigateTo("/workflows", true);
+            Navigation.NavigateTo("/workflows");
     }
 
     private async Task ExecuteWorkflow()
