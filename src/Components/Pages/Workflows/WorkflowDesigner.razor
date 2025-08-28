@@ -85,7 +85,7 @@
         foreach (var t in Workflow.Tasks)
         {
             var data = new { name = t.Name, type = t.Type, parameters = t.Parameters };
-            var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", t.Name, data, (int)(t.X == 0 ? 100 : t.X), (int)(t.Y == 0 ? 100 : t.Y));
+            var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", t.Name, data, (double)(t.Position.X == 0 ? 100 : t.Position.X), (double)(t.Position.Y == 0 ? 100 : t.Position.Y));
             t.NodeId = id.ToString();
         }
         foreach (var t in Workflow.Tasks)
@@ -105,12 +105,11 @@
             {
                 Name = $"{type}-{Workflow.Tasks.Count + 1}",
                 Type = type,
-                X = 120 + (Workflow.Tasks.Count % 5) * 140,
-                Y = 120 + (Workflow.Tasks.Count / 5) * 120
+                Position = new(120 + (Workflow.Tasks.Count % 5) * 140, 120 + (Workflow.Tasks.Count / 5) * 120)
             };
         Workflow.Tasks.Add(newTask);
         var data = new { name = newTask.Name, type = newTask.Type, parameters = newTask.Parameters };
-        var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", newTask.Name, data, (int)newTask.X, (int)newTask.Y);
+        var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", newTask.Name, data, (double)newTask.Position.X, (double)newTask.Position.Y);
         newTask.NodeId = id.ToString();
         StateHasChanged();
     }
@@ -225,6 +224,18 @@
         {
             SelectedTask = task;
             ShowPropertiesDialog(task);
+        }
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnNodeMoved(string id, double? x, double? y)
+    {
+        var task = Workflow.Tasks.FirstOrDefault(t => t.NodeId == id);
+        if (task != null && x.HasValue && y.HasValue)
+        {
+            task.Position = new((int)x.Value, (int)y.Value);
+            StateHasChanged();
         }
         return Task.CompletedTask;
     }
