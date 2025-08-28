@@ -26,13 +26,25 @@
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Started At</MudTh>
-        <MudTh>End At</MudTh>
+        <MudTh>Finished At</MudTh>
+        <MudTh>Duration</MudTh>
         <MudTh>Status</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd Class="cursor-pointer" DataLabel="ExecutionStart">@context.ExecutionStart</MudTd>
-        <MudTd Class="cursor-pointer" DataLabel="ExecutionEnd"><b>@context.ExecutionEnd</b></MudTd>
+        <MudTd Class="cursor-pointer" DataLabel="ExecutionEnd">@context.ExecutionEnd</MudTd>
+        <MudTd Class="cursor-pointer" DataLabel="Duration">
+            @if (context.ExecutionEnd != null)
+            {
+                var duration = context.ExecutionEnd.Value - context.ExecutionStart;
+                <span><span>@FormatDuration(duration)</span></span>
+            }
+            else
+            {
+                <span>-</span>
+            }
+        </MudTd>
         <MudTd Class="cursor-pointer" DataLabel="Status"><b>@context.Status</b></MudTd>
         <MudTd Class="cursor-pointer action-cell"
                Style="margin: 0px !important; padding:0px !important; text-align: right;">
@@ -143,5 +155,16 @@
     private void ManageWorkflowExecution(Guid id)
     {
         Navigation.NavigateTo($"/workflows/{id}/manage");
+    }
+
+    private string FormatDuration(TimeSpan duration)
+    {
+        if (duration.TotalSeconds < 60)
+            return $"{duration.Seconds}s";
+        if (duration.TotalMinutes < 60)
+            return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
+        if (duration.TotalHours < 24)
+            return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+        return $"{(int)duration.TotalDays}d {duration.Hours}h {duration.Minutes}m";
     }
 }
