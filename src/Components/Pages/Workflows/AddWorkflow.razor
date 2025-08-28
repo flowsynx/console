@@ -79,6 +79,7 @@
         CurrentView = CurrentView == View.Code ? View.Designer : View.Code;
         if (CurrentView == View.Code)
         {
+            WorkflowService.Set(Workflow);
             _workflowJson = WorkflowService.GetJson();
         }
         else
