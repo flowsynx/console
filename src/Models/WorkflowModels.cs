@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
 
 namespace Console.Services;
 
@@ -6,7 +7,7 @@ public class Workflow
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public WorkflowConfiguration Configuration { get; set; }
+    public WorkflowConfiguration Configuration { get; set; } = new();
     public List<WorkflowTask> Tasks { get; set; } = new();
 }
 
@@ -21,7 +22,6 @@ public class WorkflowTask
 {
     [JsonIgnore] 
     public string NodeId { get; set; }
-
     public required string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public object? Type { get; set; }
@@ -31,11 +31,23 @@ public class WorkflowTask
     public int? Timeout { get; set; }
     public List<string> Dependencies { get; set; } = new();
     public string? Output { get; set; } = string.Empty;
+    public WorkflowTaskPosition? Position { get; set; } = new(0, 0);
+}
 
-    [JsonIgnore] 
+public class WorkflowTaskPosition
+{
+    public WorkflowTaskPosition(double x, double y)
+    {
+        if (double.IsNaN(x) || double.IsInfinity(x))
+            throw new ArgumentOutOfRangeException(nameof(x), "X must be a finite number.");
+        if (double.IsNaN(y) || double.IsInfinity(y))
+            throw new ArgumentOutOfRangeException(nameof(y), "Y must be a finite number.");
+
+        X = x;
+        Y = y;
+    }
+
     public double X { get; set; }
-
-    [JsonIgnore] 
     public double Y { get; set; }
 }
 
