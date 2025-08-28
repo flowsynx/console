@@ -191,3 +191,55 @@
         border-top: 1px solid var(--mud-palette-lines-default) !important;
         padding: 12px 16px 16px !important;
     }
+
+.drawflow .drawflow-node .input,
+.drawflow .drawflow-node .output {
+    width: 14px;
+    height: 24px;
+    background: color-mix(in srgb, var(--mud-palette-background) 90%, black);
+    border: 2px solid var(--mud-palette-lines-default);
+    cursor: pointer;
+    z-index: 5;
+}
+
+.drawflow .drawflow-node .input {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    left: -29px;
+}
+
+.drawflow .drawflow-node .output {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    right: -15px;
+}
+
+.drawflow .drawflow-node:hover .input,
+.drawflow .drawflow-node.active .input,
+.drawflow .drawflow-node.selected .input,
+.drawflow .drawflow-node:hover .output,
+.drawflow .drawflow-node.active .output,
+.drawflow .drawflow-node.selected .output {
+    background: color-mix(in srgb, var(--mud-palette-background) 80%, var(--mud-palette-primary));
+}
+
+.drawflow .drawflow-node.selected .input,
+.drawflow .drawflow-node.selected .output {
+    background: color-mix(in srgb, var(--mud-palette-background) 80%, var(--mud-palette-primary));
+    border: 2px solid var(--mud-palette-primary-lighten);
+}
+
+.drawflow-arrowhead {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 10px solid var(--mud-palette-lines-default);
+    transform: translate(-50%, -50%) rotate(0deg);
+    pointer-events: none; /* don’t block mouse */
+}
