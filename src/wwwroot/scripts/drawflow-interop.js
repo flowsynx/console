@@ -1,9 +1,8 @@
 ﻿window.fsDrawflow = (function () {
     let editor = null;
     let dotnet = null;
-    let contextMenuEl = null;
-    let currentNodeId = null;
     let zoomLevel = 1;
+    let isReadOnly = false;
 
     // -----------------------------
     // Helper Functions
@@ -14,69 +13,15 @@
         return el;
     };
 
-    const createContextMenu = () => {
-        if (contextMenuEl) return;
-
-        contextMenuEl = document.createElement("div");
-        contextMenuEl.id = "node-context-menu";
-
-        const propItem = document.createElement("div");
-        propItem.innerText = "Properties";
-        propItem.className = "menu-item";
-        propItem.onclick = () => {
-            hideContextMenu();
-            if (currentNodeId) {
-                dotnet.invokeMethodAsync("OnNodeProperties", currentNodeId.toString());
-            }
-        };
-
-        const delItem = document.createElement("div");
-        delItem.innerText = "Delete";
-        delItem.className = "menu-item";
-        delItem.onclick = () => {
-            hideContextMenu();
-            if (currentNodeId) {
-                editor.removeNodeId(currentNodeId);
-                dotnet.invokeMethodAsync("OnNodeRemoved", currentNodeId.toString());
-            }
-        };
-
-        contextMenuEl.appendChild(propItem);
-        contextMenuEl.appendChild(delItem);
-        document.body.appendChild(contextMenuEl);
-
-        document.addEventListener("click", (e) => {
-            if (!contextMenuEl.contains(e.target)) hideContextMenu();
-        });
-    };
-
-    const showContextMenu = (x, y, nodeId) => {
-        createContextMenu();
-        currentNodeId = nodeId;
-        contextMenuEl.style.left = `${x}px`;
-        contextMenuEl.style.top = `${y}px`;
-        contextMenuEl.style.display = "block";
-    };
-
-    const hideContextMenu = () => {
-        if (contextMenuEl) {
-            contextMenuEl.style.display = "none";
-            currentNodeId = null;
-        }
-    };
-
     const bindNodeEvents = (id) => {
+        if (isReadOnly) return;
+
         const el = document.querySelector(`#node-${id}`);
         if (!el) return;
 
         el.addEventListener("dblclick", () =>
             dotnet.invokeMethodAsync("OnNodeDoubleClicked", id.toString())
         );
-
-        el.addEventListener("contextmenu", (e) => {
-            e.preventDefault();
-            showContextMenu(e.pageX, e.pageY, id);
-        });
     };
 
     const safeInvoke = (method, ...args) => {
@@ -92,8 +37,6 @@
         const arrow = document.createElement("div");
         arrow.className = "drawflow-arrowhead";
         pathEl.arrowEl = arrow; // keep reference
-
-        // Append to container
         editor.precanvas.appendChild(arrow);
 
         const updatePosition = () => {
@@ -101,7 +44,6 @@
                 const length = pathEl.getTotalLength();
                 const point = pathEl.getPointAtLength(length - 1);
                 const pointPrev = pathEl.getPointAtLength(length - 5);
-
                 const angle = Math.atan2(point.y - pointPrev.y, point.x - pointPrev.x) * 180 / Math.PI;
 
                 arrow.style.left = `${point.x}px`;
@@ -110,27 +52,29 @@
             } catch { /* ignore */ }
         };
 
-        // Initial position
         updatePosition();
-
-        // Keep updating on zoom/pan/resize
         const obs = new MutationObserver(updatePosition);
         obs.observe(pathEl, { attributes: true, attributeFilter: ["d"] });
     };
 
-
     // -----------------------------
     // Core API
     // -----------------------------
-    const init = (containerId, dotNetRef) => {
+    const init = (containerId, dotNetRef, options = {}) => {
         dotnet = dotNetRef;
+        isReadOnly = options.readOnly || false;
+
         const container = ensureContainer(containerId);
 
         editor = new Drawflow(container);
         editor.reroute = true;
         editor.start();
         zoomLevel = 1;
-        container.classList.add("drawflow-canvas");
+        if (!isReadOnly)
+            container.classList.add("drawflow-canvas");
+
+        // Apply read-only
+        editor.editor_mode = isReadOnly ? "view" : "edit";
 
         // Mousewheel zoom
         container.addEventListener("wheel", (e) => {
@@ -141,35 +85,33 @@
             }
         });
 
-        // Event bindings
-        editor.on("nodeSelected", (id) => safeInvoke("OnNodeSelected", id.toString()));
-        editor.on("nodeUnselected", () => safeInvoke("OnNodeUnselected"));
-        editor.on("nodeRemoved", (id) => safeInvoke("OnNodeRemoved", id.toString()));
-        editor.on("nodeMoved", (id) => {
-            const node = editor.getNodeFromId(id);
-            if (node) {
-                const x = node.pos_x;
-                const y = node.pos_y;
-                safeInvoke("OnNodeMoved", id.toString(), x, y);
-            }
-        });
-        editor.on("connectionCreated", ({ output_id, input_id }) => {
-            safeInvoke("OnConnectionCreated", output_id.toString(), input_id.toString());
-            setTimeout(() => {
+        if (!isReadOnly) {
+            editor.on("nodeSelected", (id) => safeInvoke("OnNodeSelected", id.toString()));
+            editor.on("nodeUnselected", () => safeInvoke("OnNodeUnselected"));
+            editor.on("nodeRemoved", (id) => safeInvoke("OnNodeRemoved", id.toString()));
+            editor.on("nodeMoved", (id) => {
+                const node = editor.getNodeFromId(id);
+                if (node) {
+                    safeInvoke("OnNodeMoved", id.toString(), node.pos_x, node.pos_y);
+                }
+            });
+            editor.on("connectionCreated", ({ output_id, input_id }) => {
+                safeInvoke("OnConnectionCreated", output_id.toString(), input_id.toString());
+                setTimeout(() => {
+                    const pathEl = container.querySelector(
+                        `.connection.node_in_${input_id}.node_out_${output_id} path.main-path`
+                    );
+                    if (pathEl) addArrowheadToPath(pathEl);
+                }, 50);
+            });
+            editor.on("connectionRemoved", ({ output_id, input_id }) => {
+                safeInvoke("OnConnectionRemoved", output_id.toString(), input_id.toString());
                 const pathEl = container.querySelector(
                     `.connection.node_in_${input_id}.node_out_${output_id} path.main-path`
                 );
-                if (pathEl) addArrowheadToPath(pathEl);
-            }, 50);
-        });
-
-        editor.on("connectionRemoved", ({ output_id, input_id }) => {
-            safeInvoke("OnConnectionRemoved", output_id.toString(), input_id.toString());
-            const pathEl = container.querySelector(
-                `.connection.node_in_${input_id}.node_out_${output_id} path.main-path`
-            );
-            if (pathEl && pathEl.arrowEl) pathEl.arrowEl.remove();
-        });
+                if (pathEl && pathEl.arrowEl) pathEl.arrowEl.remove();
+            });
+        }
 
         return true;
     };
