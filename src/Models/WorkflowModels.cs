@@ -1,7 +1,13 @@
-﻿using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Console.Services;
+
+public class WorkflowViewModel
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public WorkflowConfiguration Configuration { get; set; } = new();
+}
 
 public class Workflow
 {

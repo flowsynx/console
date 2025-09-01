@@ -19,8 +19,8 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12" sm="12">
-                <MudTextField T="string" For="@(() => Name)"
-                              @bind-Value="Name"
+                <MudTextField T="string" For="@(() => Config.Name)"
+                              @bind-Value="Config.Name"
                               Label="Workflow name"
                               Variant="Variant.Text"
                               Margin="Margin.Dense"
@@ -28,8 +28,8 @@
             </MudItem>
 
             <MudItem xs="12" sm="12">
-                <MudTextField T="string" For="@(() => Description)"
-                              @bind-Value="Description"
+                <MudTextField T="string" For="@(() => Config.Description)"
+                              @bind-Value="Config.Description"
                               Label="Workflow description"
                               Variant="Variant.Text"
                               Margin="Margin.Dense"
@@ -37,8 +37,8 @@
             </MudItem>
 
             <MudItem xs="12" sm="6">
-                <MudNumericField T="int?" For="@(() => Config.Timeout)"
-                                 @bind-Value="Config.Timeout"
+                <MudNumericField T="int?" For="@(() => Config.Configuration.Timeout)"
+                                 @bind-Value="Config.Configuration.Timeout"
                                  Label="Timeout (ms)"
                                  Required="true"
                                  Variant="Variant.Text"
@@ -55,14 +55,14 @@
                     <MudExpansionPanel Text="Error Handling">
                         <MudGrid>
                             <MudItem xs="12" sm="6">
-                                <MudSelect T="string" For="@(() => Config.ErrorHandling!.Strategy)"
+                                <MudSelect T="string" For="@(() => Config.Configuration.ErrorHandling!.Strategy)"
                                            Label="Select Status"
                                            Variant="Variant.Text"
                                            Margin="Margin.Dense"
                                            Clearable="false"
                                            OpenIcon="@Icons.Material.Filled.ArrowDropDown"
                                            CloseIcon="@Icons.Material.Filled.ArrowDropUp"
-                                           @bind-Value="Config.ErrorHandling!.Strategy">
+                                           @bind-Value="Config.Configuration.ErrorHandling!.Strategy">
                                     @foreach (var strategy in Enum.GetValues<ErrorStrategy>())
                                     {
                                         <MudSelectItem Value="@strategy.ToString().ToLower()">@strategy</MudSelectItem>
@@ -77,22 +77,22 @@
                         <MudGrid>
                             <MudItem xs="12" sm="6">
                                 <MudNumericField T="int"
-                                                 For="@(() => Config.ErrorHandling!.RetryPolicy!.MaxRetries)"
-                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.MaxRetries"
+                                                 For="@(() =>           Config.Configuration.ErrorHandling!.RetryPolicy!.MaxRetries)"
+                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxRetries"
                                                  Label="Max Retries"
                                                  Variant="Variant.Text"
                                                  Margin="Margin.Dense" />
                             </MudItem>
 
                             <MudItem xs="12" sm="6">
-                                <MudSelect T="string" For="@(() => Config.ErrorHandling!.RetryPolicy!.BackoffStrategy)"
+                                <MudSelect T="string" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy)"
                                            Label="Backoff Strategy"
                                            Variant="Variant.Text"
                                            Margin="Margin.Dense"
                                            Clearable="false"
                                            OpenIcon="@Icons.Material.Filled.ArrowDropDown"
                                            CloseIcon="@Icons.Material.Filled.ArrowDropUp"
-                                           @bind-Value="Config.ErrorHandling!.RetryPolicy!.BackoffStrategy">
+                                           @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy">
                                     @foreach (var strategy in Enum.GetValues<BackoffStrategy>())
                                     {
                                         <MudSelectItem Value="@strategy.ToString().ToLower()">@strategy</MudSelectItem>
@@ -101,24 +101,24 @@
                             </MudItem>
 
                             <MudItem xs="12" sm="6">
-                                <MudNumericField T="int" For="@(() => Config.ErrorHandling!.RetryPolicy!.InitialDelay)"
-                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.InitialDelay"
+                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelay)"
+                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelay"
                                                  Label="Initial Delay (ms)"
                                                  Variant="Variant.Text"
                                                  Margin="Margin.Dense" />
                             </MudItem>
 
                             <MudItem xs="12" sm="6">
-                                <MudNumericField T="int" For="@(() => Config.ErrorHandling!.RetryPolicy!.MaxDelay)"
-                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.MaxDelay"
+                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelay)"
+                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelay"
                                                  Label="Max Delay (ms)"
                                                  Variant="Variant.Text"
                                                  Margin="Margin.Dense" />
                             </MudItem>
 
                             <MudItem xs="12" sm="6">
-                                <MudNumericField T="double" For="@(() => Config.ErrorHandling!.RetryPolicy!.BackoffCoefficient)"
-                                                 @bind-Value="Config.ErrorHandling!.RetryPolicy!.BackoffCoefficient"
+                                <MudNumericField T="double" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffCoefficient)"
+                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffCoefficient"
                                                  Label="Backoff Coefficient"
                                                  Variant="Variant.Text"
                                                  Margin="Margin.Dense" />
@@ -152,13 +152,7 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public string Name { get; set; } = string.Empty;
-
-    [Parameter]
-    public string? Description { get; set; }
-
-    [Parameter]
-    public WorkflowConfiguration Config { get; set; } = new();
+    public WorkflowViewModel Config { get; set; } = new();
 
     private bool IsProcessing = false;
 
@@ -166,15 +160,17 @@
 
     protected override void OnInitialized()
     {
-        Config.ErrorHandling ??= new ErrorHandling();
-        Config.ErrorHandling.RetryPolicy ??= new RetryPolicy();
+        Config.Configuration.ErrorHandling ??= new ErrorHandling();
+        Config.Configuration.ErrorHandling.RetryPolicy ??= new RetryPolicy();
 
-        if (!string.IsNullOrWhiteSpace(Config.ErrorHandling.Strategy)){
-            Config.ErrorHandling.Strategy = Config.ErrorHandling.Strategy.ToLower();
+        if (!string.IsNullOrWhiteSpace(Config.Configuration.ErrorHandling.Strategy))
+        {
+            Config.Configuration.ErrorHandling.Strategy = Config.Configuration.ErrorHandling.Strategy.ToLower();
         }
 
-        if (!string.IsNullOrWhiteSpace(Config.ErrorHandling!.RetryPolicy!.BackoffStrategy)){
-            Config.ErrorHandling!.RetryPolicy!.BackoffStrategy = Config.ErrorHandling!.RetryPolicy!.BackoffStrategy.ToLower();
+        if (!string.IsNullOrWhiteSpace(Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy))
+        {
+            Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy = Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy.ToLower();
         }
     }
 

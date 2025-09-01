@@ -45,44 +45,44 @@
             {
                 <MudTooltip Text="Configure workflow">
                     <MudIconButton Variant="Variant.Text"
-                                   Size="@Size.Medium"
-                                   Color="Color.Default"
-                                   Disabled="@IsProcessing"
-                                   Icon="@Icons.Material.Filled.Settings"
-                                   OnClick="ConfigureWorkflow">
+                    Size="@Size.Medium"
+                    Color="Color.Default"
+                    Disabled="@IsProcessing"
+                    Icon="@Icons.Material.Filled.Settings"
+                    OnClick="ConfigureWorkflow">
                     </MudIconButton>
                 </MudTooltip>
             }
             <MudSpacer />
             <MudTooltip Text="Delete workflow">
                 <MudButton Variant="Variant.Filled"
-                           Size="@Size.Medium"
-                           Color="Color.Error"
-                           Disabled="@IsProcessing"
-                           StartIcon="@Icons.Material.Filled.Delete"
-                           Class="mr-1"
-                           OnClick="DeleteWorkflow">
+                Size="@Size.Medium"
+                Color="Color.Error"
+                Disabled="@IsProcessing"
+                StartIcon="@Icons.Material.Filled.Delete"
+                Class="mr-1"
+                OnClick="DeleteWorkflow">
                     Delete
                 </MudButton>
             </MudTooltip>
             <MudTooltip Text="Execute workflow">
                 <MudButton Variant="Variant.Filled"
-                               Size="@Size.Medium"
-                               Color="Color.Primary"
-                               Disabled="@IsProcessing"
-                               StartIcon="@Icons.Material.Filled.PlayArrow"
-                           OnClick="ExecuteWorkflow">
-                               Execute
+                Size="@Size.Medium"
+                Color="Color.Primary"
+                Disabled="@IsProcessing"
+                StartIcon="@Icons.Material.Filled.PlayArrow"
+                OnClick="ExecuteWorkflow">
+                    Execute
                 </MudButton>
             </MudTooltip>
         </MudToolBar>
         @RenderCurrentView()
     </MudTabPanel>
     <MudTabPanel Text="Executions" Icon="@Icons.Material.Filled.PlayArrow">
-        <Executions workflowId="@id" />
+        <WorkflowExecutions workflowId="@id" />
     </MudTabPanel>
     <MudTabPanel Text="Triggers" Icon="@Icons.Material.Filled.Bolt">
-        <Triggers workflowId="@id" />
+        <WorkflowTriggers workflowId="@id" />
     </MudTabPanel>
 </MudTabs>
 
@@ -252,16 +252,27 @@
                 BackgroundClass = "blur-dialog-background"
             };
 
-        var parameters = new DialogParameters {
-            { "Name", Workflow.Name },
-            { "Description", Workflow.Description },
-            { "Config", Workflow.Configuration }
+        var parameters = new DialogParameters
+        {
+            {
+                "Config", new WorkflowViewModel
+                {
+                    Name = Workflow.Name,
+                    Description = Workflow.Description,
+                    Configuration = Workflow.Configuration
+                }
+            }
         };
 
         var dialog = await DialogService.ShowAsync<ConfigureWorkflowDialog>("Configure workflow", parameters, options);
         var dialogResult = await dialog.Result;
         if (dialogResult != null && !dialogResult.Canceled)
-            Workflow.Configuration = (WorkflowConfiguration)dialogResult.Data;
+        {
+            var result = (WorkflowViewModel)dialogResult.Data;
+            Workflow.Name = result.Name;
+            Workflow.Description = result.Description;
+            Workflow.Configuration = result.Configuration;
+        }
     }
 
     private async Task DeleteWorkflow()
