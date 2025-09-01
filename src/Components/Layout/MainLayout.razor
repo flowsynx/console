@@ -32,7 +32,10 @@
         </MudHidden>
         <LoginDisplay />
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="25" ClipMode="DrawerClipMode.Always">
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="25"
+               Variant="@DrawerVariant.Mini"
+               ClipMode="DrawerClipMode.Docked">
         <NavMenu />
     </MudDrawer>
     <MudMainContent>
