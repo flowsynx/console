@@ -19,7 +19,7 @@ public static class ServiceCollectionExtensions
         services
             .AddBlazoredLocalStorage()
             .AddScoped<IPreferenceManager, PreferenceManager>()
-            .AddScoped<IWorkflowService, WorkflowService>()
+            .AddTransient<IWorkflowService, WorkflowService>()
             .AddScoped<BreadcrumbService>()
             .AddHttpContextAccessor()
             .AddScoped<IAccessTokenProvider, ServerAccessTokenProvider>();
