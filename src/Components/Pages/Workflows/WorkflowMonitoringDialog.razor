@@ -1,0 +1,113 @@
+﻿@using FlowSynx.Client.Messages.Requests.PluginConfig
+@using FlowSynx.Client.Messages.Requests.Plugins
+@using FlowSynx.Client.Messages.Requests.Workflows
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using MudBlazor
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+@inject IWorkflowService WorkflowService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AccountTree" Class="mr-3 mb-n1" /> Workflow execution monitoring
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <WorkflowMonitoring Workflow="@Workflow" />
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public Guid WorkflowId { get; set; } = Guid.Empty;
+
+    [Parameter]
+    public Guid WorkflowExecutionId { get; set; } = Guid.Empty;
+
+    private bool IsProcessing = false;
+    private Workflow Workflow => WorkflowService.Get();
+    private string? _workflowJson;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorkflow();
+    }
+
+    private async Task LoadWorkflow()
+    {
+        try
+        {
+            IsProcessing = true;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+            if (string.IsNullOrEmpty(accessTokenResult))
+            {
+                SnackBar.Add("No token available or user not authenticated.", Severity.Error);
+                MudDialog.Cancel();
+                return;
+            }
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(accessTokenResult);
+
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var workflowResult = 
+            await FlowSynxClient.Workflows.ExecutionsDetailsAsync(
+                new WorkflowExecutionDetailsRequest 
+                { 
+                    WorkflowId = WorkflowId,
+                    WorkflowExecutionId = WorkflowExecutionId
+                });
+
+            if (workflowResult.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while fetching the workflow.", Severity.Error);
+                MudDialog.Cancel();
+                return;
+            }
+            var payload = workflowResult.Payload;
+            if (!payload.Succeeded)
+            {
+                foreach (var message in payload.Messages)
+                    SnackBar.Add($"Get workflow error:\n{message}", Severity.Error);
+
+                MudDialog.Cancel();
+                return;
+            }
+
+            _workflowJson = payload.Data.Workflow;
+            WorkflowService.SetJson(_workflowJson);
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+            MudDialog.Cancel();
+            return;
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void BackdropHandler(MouseEventArgs e)
+    {
+        if (!IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !IsProcessing)
+            MudDialog.Cancel();
+    }
+}

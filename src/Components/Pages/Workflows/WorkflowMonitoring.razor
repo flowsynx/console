@@ -1,0 +1,106 @@
+﻿@using Microsoft.AspNetCore.Components
+@implements IAsyncDisposable
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService DialogService
+
+<div class="designer-root">
+    <div class="toolbar-container">
+        <MudTooltip Text="Approval workflow">
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Medium"
+                       StartIcon="@Icons.Material.Filled.Check"
+                       Color="Color.Default" 
+                       Class="mr-2">Approval</MudButton>
+        </MudTooltip>
+        <MudTooltip Text="Cancel workflow">
+            <MudButton Variant="Variant.Filled"
+                       Size="Size.Medium"
+                       StartIcon="@Icons.Material.Filled.Cancel"
+                       Color="Color.Error">Cancel execution</MudButton>
+        </MudTooltip>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-wrap-readonly">
+        <div id="drawflow" style="height:100%;"></div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Workflow Workflow { get; set; }
+
+    private WorkflowTask SelectedTask;
+    private DotNetObjectReference<WorkflowMonitoring> _selfRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("fsDrawflow.init", "drawflow", _selfRef, new { readOnly = true });
+            await LoadWorkflowIntoCanvas();
+        }
+    }
+
+    private async Task LoadWorkflowIntoCanvas()
+    {
+        await JSRuntime.InvokeVoidAsync("fsDrawflow.clear");
+        foreach (var t in Workflow.Tasks)
+        {
+            var data = new { name = t.Name, type = t.Type, parameters = t.Parameters };
+            var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", t.Name, data, (double)(t.Position.X == 0 ? 100 : t.Position.X), (double)(t.Position.Y == 0 ? 100 : t.Position.Y));
+            t.NodeId = id.ToString();
+        }
+        foreach (var t in Workflow.Tasks)
+        {
+            foreach (var dep in t.Dependencies)
+            {
+                var from = Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
+                if (from != null)
+                    await JSRuntime.InvokeVoidAsync("fsDrawflow.connect", from.NodeId, t.NodeId);
+            }
+        }
+    }
+
+    [JSInvokable]
+    public Task OnNodeSelected(string id)
+    {
+        SelectedTask = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnNodeUnselected() { SelectedTask = null; StateHasChanged(); return Task.CompletedTask; }
+
+
+    [JSInvokable]
+    public Task OnNodeDoubleClicked(string id)
+    {
+        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        if (task != null)
+        {
+            SelectedTask = task;
+        }
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnNodeProperties(string id)
+    {
+        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        if (task != null)
+        {
+            SelectedTask = task;
+        }
+        return Task.CompletedTask;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _selfRef?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}
