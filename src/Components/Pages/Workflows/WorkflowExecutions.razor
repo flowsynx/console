@@ -1,0 +1,296 @@
+﻿@using Console.Models
+@using FlowSynx.Client.Messages.Requests.Workflows
+@using FlowSynx.Client.Messages.Responses.PluginConfig
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using FlowSynx.Client.Messages.Responses.Workflows
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.JSInterop
+
+@implements IAsyncDisposable
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject IFlowSynxClientConnection FlowSynxClientConnection
+@inject ISnackbar SnackBar
+@inject IDialogService DialogService
+@inject IJSRuntime JS
+@inject ILogger<WorkflowExecutions> Logger
+@inject NavigationManager Navigation
+
+<MudTable T="WorkflowExecutionListResponse"
+          Items="_workflowExecutions"
+          Dense="true"
+          Hover="true"
+          Bordered="false"
+          Striped="false"
+          OnRowClick="ManageWorkflowExecution"
+          @ref="_table" LoadingProgressColor="Color.Primary">
+    <ToolBarContent>
+        <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Status</MudTh>
+        <MudTh>Started At</MudTh>
+        <MudTh>Finished At</MudTh>
+        <MudTh>Duration</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd Class="cursor-pointer" DataLabel="Status">
+            <div style="display:flex; align-items:center; gap:0.25rem;">
+                <span>@GetStatus(context)</span>
+                <b>@context.Status</b>
+            </div>
+        </MudTd>
+        <MudTd Class="cursor-pointer" DataLabel="ExecutionStart">@context.ExecutionStart</MudTd>
+        <MudTd Class="cursor-pointer" DataLabel="ExecutionEnd">@context.ExecutionEnd</MudTd>
+        <MudTd Class="cursor-pointer" DataLabel="Duration">
+            @if (context.ExecutionEnd != null)
+            {
+                var duration = context.ExecutionEnd.Value - context.ExecutionStart;
+                <span><span>@FormatDuration(duration)</span></span>
+            }
+            else
+            {
+                <span>-</span>
+            }
+        </MudTd>
+        <MudTd Class="cursor-pointer action-cell"
+               Style="margin: 0px !important; padding:0px !important; text-align: right;">
+            <div class="justify-end w-100 actions-toolbar mr-2">
+                <MudToolBar Dense="true"
+                            Gutters="false"
+                            Class="internal-toolbar-height"
+                            Style="text-align: right;">
+                    <MudTooltip Text="Workflow execution monitoring">
+                        <MudIconButton Icon="@Icons.Material.Filled.EditNote"
+                                       Color="Color.Primary"
+                                       Size="@Size.Small"
+                                       OnClick="@(() => ManageWorkflowExecution(@context.Id))" />
+                    </MudTooltip>
+                </MudToolBar>
+            </div>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    [Parameter] public Guid workflowId { get; set; }
+
+    private HubConnection? _hubConnection;
+    private MudTable<WorkflowExecutionListResponse>? _table;
+    private List<WorkflowExecutionListResponse> _workflowExecutions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var baseUri = new Uri(FlowSynxClientConnection.BaseAddress);
+        var hubUrl = new Uri(baseUri, new Uri("hubs/workflowExecutions", UriKind.Relative));
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubUrl, options =>
+            {
+                options.AccessTokenProvider = async () =>
+                {
+                    var result = await TokenProvider.GetAccessTokenAsync();
+                    return result;
+                };
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        RegisterHandlers();
+
+        _hubConnection.Reconnected += async (connectionId) =>
+        {
+            RegisterHandlers(); // reattach handlers
+            await InvokeAsync(StateHasChanged);
+        };
+
+        _hubConnection.Closed += async (error) =>
+        {
+            await Task.Delay(2000);
+            try
+            {
+                await _hubConnection.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to restart hub: {ex.Message}");
+            }
+        };
+
+        await _hubConnection.StartAsync();
+        await LoadInitialData();
+    }
+
+    private void RegisterHandlers()
+    {
+        _hubConnection?.Remove("WorkflowExecutionUpdated");
+        _hubConnection?.On<WorkflowExecutionUpdateDto>("WorkflowExecutionUpdated", (update) =>
+        {
+            var existing = _workflowExecutions.FirstOrDefault(w => w.Id == update.ExecutionId);
+            if (existing != null)
+            {
+                existing.Status = update.Status;
+                existing.ExecutionEnd = update.ExecutionEnd;
+            }
+            else
+            {
+                _workflowExecutions.Add(new WorkflowExecutionListResponse
+                    {
+                        Id = update.ExecutionId,
+                        ExecutionStart = update.ExecutionStart,
+                        ExecutionEnd = update.ExecutionEnd,
+                        Status = update.Status
+                    });
+            }
+
+            SortExecutions();
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private async Task LoadInitialData()
+    {
+        try
+        {
+            var token = await TokenProvider.GetAccessTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                SnackBar.Add("No token available or user not authenticated.", Severity.Error);
+                return;
+            }
+
+            FlowSynxClient.SetAuthenticationStrategy(new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token));
+
+            var request = new WorkflowExecutionListRequest { WorkflowId = workflowId };
+            var result = await FlowSynxClient.Workflows.ExecutionsAsync(request, CancellationToken.None);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to load executions: Bad response code.", Severity.Error);
+                return;
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Execution list error:\n{errorMessage}", Severity.Error);
+                return;
+            }
+
+            _workflowExecutions = result.Payload.Data.ToList();
+            SortExecutions();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Exception occurred: {ex.Message}");
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void SortExecutions()
+    {
+        _workflowExecutions = _workflowExecutions
+            .OrderByDescending(x => x.ExecutionStart)
+            .ToList();
+    }
+
+    private async Task Refresh()
+    {
+        await LoadInitialData();
+        StateHasChanged();
+    }
+
+    private async void ManageWorkflowExecution(TableRowClickEventArgs<WorkflowExecutionListResponse> workflow)
+    {
+        if (workflow.Item == null) return;
+        await OpenMonitoringDialog(workflowId, workflow.Item.Id);
+    }
+
+    private async void ManageWorkflowExecution(Guid executionId)
+    {
+        await OpenMonitoringDialog(workflowId, executionId);
+    }
+
+    private async Task OpenMonitoringDialog(Guid workflowId, Guid executionId)
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                FullScreen = true,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "WorkflowId", workflowId },
+            { "WorkflowExecutionId", executionId }
+        };
+
+        var dialog = await DialogService.ShowAsync<WorkflowMonitoringDialog>("Workflow execution monitoring", parameters, options);
+        await dialog.Result;
+    }
+
+    private string FormatDuration(TimeSpan duration)
+    {
+        if (duration.TotalSeconds < 60)
+            return $"{duration.Seconds}s";
+        if (duration.TotalMinutes < 60)
+            return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
+        if (duration.TotalHours < 24)
+            return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+        return $"{(int)duration.TotalDays}d {duration.Hours}h {duration.Minutes}m";
+    }
+
+    private RenderFragment GetStatus(WorkflowExecutionListResponse context) => builder =>
+    {
+        if (context.Status?.ToLower() == "failed")
+        {
+            builder.OpenComponent(0, typeof(MudIcon));
+            builder.AddAttribute(1, "Icon", Icons.Material.Filled.Cancel);
+            builder.AddAttribute(2, "Color", Color.Error);
+            builder.AddAttribute(3, "Size", Size.Small);
+            builder.CloseComponent();
+        }
+        else if (context.Status?.ToLower() == "completed")
+        {
+            builder.OpenComponent(0, typeof(MudIcon));
+            builder.AddAttribute(1, "Icon", Icons.Material.Filled.CheckCircle);
+            builder.AddAttribute(2, "Color", Color.Success);
+            builder.AddAttribute(3, "Size", Size.Small);
+            builder.CloseComponent();
+        }
+        else if (context.Status?.ToLower() == "paused")
+        {
+            builder.OpenComponent(0, typeof(MudIcon));
+            builder.AddAttribute(1, "Icon", Icons.Material.Filled.PauseCircle);
+            builder.AddAttribute(2, "Color", Color.Warning);
+            builder.AddAttribute(3, "Size", Size.Small);
+            builder.CloseComponent();
+        }
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection != null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}
