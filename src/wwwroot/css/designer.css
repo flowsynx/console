@@ -168,14 +168,6 @@
     z-index: 4;
 }
 
-
-
-
-
-
-
-
-
 .drawflow .connection .main-path {
     stroke: var(--mud-palette-lines-default);
     stroke-width: 3px;
