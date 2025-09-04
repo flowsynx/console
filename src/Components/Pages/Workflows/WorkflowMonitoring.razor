@@ -6,19 +6,25 @@
 
 <div class="designer-root">
     <div class="toolbar-container">
-        <MudTooltip Text="Approval workflow">
-            <MudButton Variant="Variant.Outlined"
-                       Size="Size.Medium"
-                       StartIcon="@Icons.Material.Filled.Check"
-                       Color="Color.Default" 
-                       Class="mr-2">Approval</MudButton>
-        </MudTooltip>
-        <MudTooltip Text="Cancel workflow">
-            <MudButton Variant="Variant.Filled"
-                       Size="Size.Medium"
-                       StartIcon="@Icons.Material.Filled.Cancel"
-                       Color="Color.Error">Cancel execution</MudButton>
-        </MudTooltip>
+        @if (IsApproval)
+        {
+            <MudTooltip Text="Approval workflow">
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Medium"
+                           StartIcon="@Icons.Material.Filled.Check"
+                           Color="Color.Default">Approval</MudButton>
+            </MudTooltip>
+        }
+        @if (IsCancelable)
+        {
+            <MudTooltip Text="Cancel workflow">
+                <MudButton Variant="Variant.Filled"
+                           Size="Size.Medium"
+                           StartIcon="@Icons.Material.Filled.Cancel"
+                           Color="Color.Error"
+                           Class="ml-2">Cancel execution</MudButton>
+            </MudTooltip>
+        }
     </div>
 
     <!-- Canvas -->
@@ -33,6 +39,8 @@
 
     private WorkflowTask SelectedTask;
     private DotNetObjectReference<WorkflowMonitoring> _selfRef;
+    private bool IsCancelable = false;
+    private bool IsApproval = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
