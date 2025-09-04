@@ -128,7 +128,7 @@
             Version = string.Empty
         };
 
-    override protected async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         PluginTypes = await LoadPluginTypes(CancellationToken.None);
         await GetDetails();
