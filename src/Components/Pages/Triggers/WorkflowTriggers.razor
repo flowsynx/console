@@ -1,0 +1,230 @@
+﻿@using FlowSynx.Client.Messages.Requests.Workflows
+@using FlowSynx.Client.Messages.Responses.PluginConfig
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using FlowSynx.Client.Messages.Responses.Workflows
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+@inject IDialogService DialogService
+
+<MudTable T="WorkflowTriggersListResponse"
+          ServerData="LoadData"
+          Dense="true"
+          Hover="true"
+          Bordered="false"
+          Striped="false"
+          @ref="_table" LoadingProgressColor="Color.Primary">
+    <ToolBarContent>
+        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add" class="mr-1" OnClick="AddTrigger">Add trigger</MudButton>
+        <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
+                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Status</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>LastModified</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Status">
+            <div style="display:flex; align-items:center; gap:0.25rem;">
+                <span>@GetStatus(context)</span>
+                <b>@context.Status</b>
+            </div>
+        </MudTd>
+        <MudTd DataLabel="Type">@context.Type</MudTd>
+        <MudTd DataLabel="LastModified">@context.LastModified</MudTd>
+        <MudTd Class="action-cell" Style="margin: 0px !important; padding:0px !important; text-align: right;">
+            <div class="justify-end w-100 actions-toolbar mr-2">
+                <MudToolBar Dense="true"
+                            Gutters="false"
+                            Class="internal-toolbar-height"
+                            Style="text-align: right;">
+                    <MudTooltip Text="Edit plugin config">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Color="Color.Primary"
+                                       Size="@Size.Small"
+                                       OnClick="@(() => UpdateTrigger(@context.Id))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Delete plugin config">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Size="@Size.Small"
+                                       OnClick="@(() => DeleteTrigger(@context.Id, context.Type))" />
+                    </MudTooltip>
+                </MudToolBar>
+            </div>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    [Parameter]
+    public Guid WorkflowId { get; set; }
+
+    private string? token;
+    private MudTable<WorkflowTriggersListResponse>? _table;
+
+    private async Task<TableData<WorkflowTriggersListResponse>> LoadData(
+        TableState state, 
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var request = new WorkflowTriggersListRequest
+            {
+                WorkflowId = WorkflowId,
+            };
+
+            var result = await FlowSynxClient.Workflows.TriggersAsync(request, cancellationToken);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to load plugins: Bad response code.", Severity.Error);
+                return new TableData<WorkflowTriggersListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Plugin config error:\n{errorMessage}", Severity.Error);
+                return new TableData<WorkflowTriggersListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            var triggers = result.Payload.Data.ToList();
+
+            return new TableData<WorkflowTriggersListResponse>
+                {
+                    Items = triggers,
+                    TotalItems = triggers.Count
+                };
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new TableData<WorkflowTriggersListResponse>
+                {
+                    Items = [],
+                    TotalItems = 0
+                };
+        }
+    }
+
+    private async Task Refresh()
+    {
+        if (_table != null)
+        {
+            await _table.ReloadServerData();
+        }
+    }
+
+    private async Task AddTrigger()
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters 
+        { 
+            { "WorkflowId", WorkflowId }
+        };
+
+        var dialog = await DialogService.ShowAsync<AddTriggerDialog>("Add new workflow trigger", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private async Task DeleteTrigger(Guid triggerId, string? triggerType)
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "WorkflowId", WorkflowId },
+            { "TriggerId", triggerId },
+            { "TriggerType", triggerType }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteTriggerDialog>("Delete workflow trigger", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private async Task UpdateTrigger(Guid triggerId)
+    {
+        var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                BackdropClick = false,
+                CloseOnEscapeKey = false,
+                BackgroundClass = "blur-dialog-background"
+            };
+
+        var parameters = new DialogParameters {
+            { "WorkflowId", WorkflowId },
+            { "TriggerId", triggerId }
+        };
+
+        var dialog = await DialogService.ShowAsync<UpdateTriggerDialog>("Update workflow trigger", parameters, options);
+        var dialogResult = await dialog.Result;
+        if (dialogResult != null && !dialogResult.Canceled)
+            await Refresh();
+    }
+
+    private RenderFragment GetStatus(WorkflowTriggersListResponse context) => builder =>
+    {
+        if (context.Status?.ToLower() == "deactive")
+        {
+            builder.OpenComponent(0, typeof(MudIcon));
+            builder.AddAttribute(1, "Icon", Icons.Material.Outlined.Block);
+            builder.AddAttribute(2, "Color", Color.Default);
+            builder.AddAttribute(3, "Size", Size.Small);
+            builder.CloseComponent();
+        }
+        else if (context.Status?.ToLower() == "active")
+        {
+            builder.OpenComponent(0, typeof(MudIcon));
+            builder.AddAttribute(1, "Icon", Icons.Material.Filled.Circle);
+            builder.AddAttribute(2, "Color", Color.Success);
+            builder.AddAttribute(3, "Size", Size.Small);
+            builder.CloseComponent();
+        }
+    };
+}

@@ -1,0 +1,236 @@
+﻿@using FlowSynx.Client.Messages.Requests.PluginConfig
+@using FlowSynx.Client.Messages.Requests.Plugins
+@using FlowSynx.Client.Messages.Requests.Workflows
+@using FlowSynx.Client.Messages.Responses.Plugins
+@using MudBlazor
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" /> Add workflow trigger
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" md="12">
+                <MudSelect T="string"
+                           Label="Trigger Type"
+                           For="@(() => AddWorkflowTriggerRequest.Type)"
+                           @bind-Value="AddWorkflowTriggerRequest.Type"
+                           Variant="Variant.Text"
+                           Margin="Margin.Dense"
+                           Clearable="false"
+                           OpenIcon="@Icons.Material.Filled.ArrowDropDown"
+                           CloseIcon="@Icons.Material.Filled.ArrowDropUp"
+                           HelperText="Enter the type of workflow trigger">
+                    @foreach (var triggerType in Enum.GetValues<WorkflowTriggerType>())
+                    {
+                        <MudSelectItem Value="@triggerType.ToString().ToLower()">@triggerType</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Value="AddWorkflowTriggerRequest.Status"
+                           Converter="_statusConverter"
+                           Label="Active"
+                           Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="12" md="12">
+                <MudText Typo="Typo.h6" Color="Color.Primary">Properties</MudText>
+                <MudTable Items="Properties" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                    <ToolBarContent>
+                        <MudButton DisableElevation
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   Size="@Size.Small"
+                                   Class="size-small-button"
+                                   OnClick="AddProperty">Add properties</MudButton>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Key</MudTh>
+                        <MudTh>Value</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudTextField For="@(() => context.Key)"
+                                          @bind-Value="context.Key"
+                                          Variant="Variant.Text"
+                                          Margin="Margin.Dense" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField For="@(() => context.Value)"
+                                          @bind-Value="context.Value"
+                                          Variant="Variant.Text"
+                                          Margin="Margin.Dense" />
+                        </MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Variant="Variant.Text"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => DeleteProperty(context.Id))"></MudIconButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton DisableElevation Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small"
+                   OnClick="Cancel">Cancel</MudButton>
+
+        <MudButton DisableElevation Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Color="Color.Primary"
+                   Disabled="@IsProcessing"
+                   Size="Size.Small"
+                   OnClick="Add">@(IsProcessing ? "Adding..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public Guid WorkflowId { get; set; }
+
+    private bool IsProcessing = false;
+    private List<TempKeyValue> Properties = new List<TempKeyValue>();
+    private AddWorkflowTriggerRequest AddWorkflowTriggerRequest = new()
+        {
+            WorkflowId = Guid.Empty,
+            Status = WorkflowTriggerStatus.Active.ToString(),
+            Type = WorkflowTriggerType.TimeBased.ToString(),
+            Properties = new()
+        };
+
+    private readonly MudBlazor.Converter<string, bool?> _statusConverter = new()
+        {
+            SetFunc = status => status == WorkflowTriggerStatus.Active.ToString(),
+            GetFunc = isActive => isActive == true ? 
+                                              WorkflowTriggerStatus.Active.ToString() : 
+                                              WorkflowTriggerStatus.DeActive.ToString()
+        };
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void BackdropHandler(MouseEventArgs e)
+    {
+        if (!IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !IsProcessing)
+            MudDialog.Cancel();
+    }
+
+    void AddProperty()
+    {
+        Properties.Add(new TempKeyValue() { Id = Guid.NewGuid() });
+    }
+
+    void DeleteProperty(Guid id)
+    {
+        var item = Properties.FirstOrDefault(x => x.Id == id);
+        if (item != null)
+            Properties.Remove(item);
+    }
+
+    private async Task Add()
+    {
+        try
+        {
+            IsProcessing = true;
+            string? token;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
+            AddWorkflowTriggerRequest.WorkflowId = WorkflowId;
+            if (Properties.Any())
+            {
+                Dictionary<string, object> objDict = new Dictionary<string, object>();
+                foreach (var item in Properties)
+                {
+                    if (!objDict.ContainsKey(item.Key))
+                        objDict.Add(item.Key, item.Value);
+                }
+
+                AddWorkflowTriggerRequest.Properties = objDict;
+            }
+            else
+            {
+                AddWorkflowTriggerRequest.Properties = new();
+            }
+
+            var result = await FlowSynxClient.Workflows.AddTriggerAsync(AddWorkflowTriggerRequest);
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while processing the request.", Severity.Error);
+                return;
+            }
+
+            var payload = result.Payload;
+            if (!payload.Succeeded)
+            {
+                foreach (var message in payload.Messages)
+                    SnackBar.Add($"Add plugin config error:\n{message}", Severity.Error);
+
+                return;
+            }
+            else
+            {
+                SnackBar.Add("Plugin config added successfully!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private class TempKeyValue
+    {
+        public Guid Id { get; set; }
+        public string Key { get; set; } = string.Empty;
+        public string? Value { get; set; }
+    }
+
+    private enum WorkflowTriggerType
+    {
+        TimeBased
+    }
+
+    private enum WorkflowTriggerStatus
+    {
+        Active = 0,
+        DeActive = 1
+    }
+}
