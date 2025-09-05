@@ -1,8 +1,16 @@
-﻿@using Microsoft.AspNetCore.Components
+﻿@using Console.Models
+@using FlowSynx.Client.Messages.Requests.Workflows
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
 @implements IAsyncDisposable
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService DialogService
+@inject ISnackbar SnackBar
+@inject IFlowSynxClient FlowSynxClient
+@inject IFlowSynxClientConnection FlowSynxClientConnection
+@inject IAccessTokenProvider TokenProvider
+@inject ILogger<WorkflowMonitoring> Logger
 
 <div class="designer-root">
     <div class="toolbar-container">
@@ -10,19 +18,19 @@
         {
             <MudTooltip Text="Approval workflow">
                 <MudButton Variant="Variant.Outlined"
-                           Size="Size.Medium"
-                           StartIcon="@Icons.Material.Filled.Check"
-                           Color="Color.Default">Approval</MudButton>
+                Size="Size.Medium"
+                StartIcon="@Icons.Material.Filled.Check"
+                Color="Color.Default">Approval</MudButton>
             </MudTooltip>
         }
         @if (IsCancelable)
         {
             <MudTooltip Text="Cancel workflow">
                 <MudButton Variant="Variant.Filled"
-                           Size="Size.Medium"
-                           StartIcon="@Icons.Material.Filled.Cancel"
-                           Color="Color.Error"
-                           Class="ml-2">Cancel execution</MudButton>
+                Size="Size.Medium"
+                StartIcon="@Icons.Material.Filled.Cancel"
+                Color="Color.Error"
+                Class="ml-2">Cancel execution</MudButton>
             </MudTooltip>
         }
     </div>
@@ -35,12 +43,80 @@
 
 @code {
     [Parameter]
+    public Guid WorkflowId { get; set; } = Guid.Empty;
+
+    [Parameter]
+    public Guid WorkflowExecutionId { get; set; } = Guid.Empty;
+
+    [Parameter]
     public Workflow Workflow { get; set; }
 
+    private bool IsProcessing = false;
+    private bool _canvasInitialized = false;
+    private bool _workflowLoaded = false;
     private WorkflowTask SelectedTask;
     private DotNetObjectReference<WorkflowMonitoring> _selfRef;
     private bool IsCancelable = false;
     private bool IsApproval = false;
+    private HubConnection _hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var baseUri = new Uri(FlowSynxClientConnection.BaseAddress);
+        var hubUrl = new Uri(baseUri, new Uri("hubs/workflowExecutions", UriKind.Relative));
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubUrl, options =>
+            {
+                options.AccessTokenProvider = async () =>
+                {
+                    var result = await TokenProvider.GetAccessTokenAsync();
+                    return result;
+                };
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        RegisterHandlers();
+
+        _hubConnection.Reconnected += async (connectionId) =>
+        {
+            RegisterHandlers(); // reattach handlers
+            await InvokeAsync(StateHasChanged);
+        };
+
+        _hubConnection.Closed += async (error) =>
+        {
+            await Task.Delay(2000);
+            try
+            {
+                await _hubConnection.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to restart hub: {ex.Message}");
+            }
+        };
+
+        await _hubConnection.StartAsync();
+        await LoadInitialData();
+    }
+
+    private void RegisterHandlers()
+    {
+        var eventId = $"WorkflowTaskExecutionUpdated-{WorkflowId}-{WorkflowExecutionId}";
+        _hubConnection?.Remove(eventId);
+        _hubConnection?.On<WorkflowTaskExecutionUpdateDto>(eventId, async (update) =>
+        {
+            var task = Workflow.Tasks.FirstOrDefault(x => x.Name == update.TaskName);
+            if (task != null && !string.IsNullOrEmpty(task.NodeId))
+            {
+                await JSRuntime.InvokeVoidAsync("fsDrawflow.setNodeStatus", task.NodeId, update.Status.ToLower());
+            }
+
+            await InvokeAsync(StateHasChanged);
+        });
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -48,19 +124,96 @@
         {
             _selfRef = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("fsDrawflow.init", "drawflow", _selfRef, new { readOnly = true });
-            await LoadWorkflowIntoCanvas();
+            _canvasInitialized = true;
+
+            if (_workflowLoaded) // workflow already fetched before canvas
+                await LoadWorkflowIntoCanvas();
+        }
+    }
+
+    private async Task LoadInitialData()
+    {
+        try
+        {
+            IsProcessing = true;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+            if (string.IsNullOrEmpty(accessTokenResult))
+            {
+                SnackBar.Add("No token available or user not authenticated.", Severity.Error);
+                return;
+            }
+
+            FlowSynxClient.SetAuthenticationStrategy(new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(accessTokenResult));
+
+            var workflowExecutionTasksRequest =
+                await FlowSynxClient.Workflows.ExecutionTasksAsync(
+                    new WorkflowExecutionTasksRequest
+                        {
+                            WorkflowId = WorkflowId,
+                            WorkflowExecutionId = WorkflowExecutionId
+                        });
+
+            if (workflowExecutionTasksRequest.StatusCode != 200)
+            {
+                SnackBar.Add("Server error while fetching the workflow.", Severity.Error);
+                return;
+            }
+
+            var payload = workflowExecutionTasksRequest.Payload;
+            if (!payload.Succeeded)
+            {
+                foreach (var message in payload.Messages)
+                    SnackBar.Add($"Get workflow error:\n{message}", Severity.Error);
+                return;
+            }
+
+            if (payload.Data != null)
+            {
+                foreach (var execTask in payload.Data)
+                {
+                    var task = Workflow.Tasks.FirstOrDefault(t => t.Name == execTask.Name);
+                    if (task != null)
+                        task.Status = execTask.Status;
+                }
+            }
+
+            _workflowLoaded = true;
+
+            if (_canvasInitialized) // canvas already ready → safe to draw
+                await LoadWorkflowIntoCanvas();
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
         }
     }
 
     private async Task LoadWorkflowIntoCanvas()
     {
         await JSRuntime.InvokeVoidAsync("fsDrawflow.clear");
+
         foreach (var t in Workflow.Tasks)
         {
             var data = new { name = t.Name, type = t.Type, parameters = t.Parameters };
-            var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", t.Name, data, (double)(t.Position.X == 0 ? 100 : t.Position.X), (double)(t.Position.Y == 0 ? 100 : t.Position.Y));
+
+            var id = await JSRuntime.InvokeAsync<int>(
+                "fsDrawflow.addNode",
+                t.Name,
+                data,
+                (double)(t.Position.X == 0 ? 100 : t.Position.X),
+                (double)(t.Position.Y == 0 ? 100 : t.Position.Y)
+            );
+
+            // Save real numeric node id, not the name
             t.NodeId = id.ToString();
+            var status = t.Status == null ? "pending" : t.Status.ToLower();
+            await JSRuntime.InvokeVoidAsync("fsDrawflow.setNodeStatus", t.NodeId, status);
         }
+
         foreach (var t in Workflow.Tasks)
         {
             foreach (var dep in t.Dependencies)
@@ -71,6 +224,7 @@
             }
         }
     }
+
 
     [JSInvokable]
     public Task OnNodeSelected(string id)
@@ -106,9 +260,12 @@
         return Task.CompletedTask;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
         _selfRef?.Dispose();
-        return ValueTask.CompletedTask;
     }
 }

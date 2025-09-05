@@ -88,7 +88,8 @@
 </MudTable>
 
 @code {
-    [Parameter] public Guid workflowId { get; set; }
+    [Parameter] 
+    public Guid WorkflowId { get; set; }
 
     private HubConnection? _hubConnection;
     private MudTable<WorkflowExecutionListResponse>? _table;
@@ -138,8 +139,9 @@
 
     private void RegisterHandlers()
     {
-        _hubConnection?.Remove("WorkflowExecutionUpdated");
-        _hubConnection?.On<WorkflowExecutionUpdateDto>("WorkflowExecutionUpdated", (update) =>
+        var eventId = $"WorkflowExecutionUpdated-{WorkflowId}";
+        _hubConnection?.Remove(eventId);
+        _hubConnection?.On<WorkflowExecutionUpdateDto>(eventId, (update) =>
         {
             var existing = _workflowExecutions.FirstOrDefault(w => w.Id == update.ExecutionId);
             if (existing != null)
@@ -176,7 +178,7 @@
 
             FlowSynxClient.SetAuthenticationStrategy(new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token));
 
-            var request = new WorkflowExecutionListRequest { WorkflowId = workflowId };
+            var request = new WorkflowExecutionListRequest { WorkflowId = WorkflowId };
             var result = await FlowSynxClient.Workflows.ExecutionsAsync(request, CancellationToken.None);
 
             if (result.StatusCode != 200)
@@ -218,12 +220,12 @@
     private async void ManageWorkflowExecution(TableRowClickEventArgs<WorkflowExecutionListResponse> workflow)
     {
         if (workflow.Item == null) return;
-        await OpenMonitoringDialog(workflowId, workflow.Item.Id);
+        await OpenMonitoringDialog(WorkflowId, workflow.Item.Id);
     }
 
     private async void ManageWorkflowExecution(Guid executionId)
     {
-        await OpenMonitoringDialog(workflowId, executionId);
+        await OpenMonitoringDialog(WorkflowId, executionId);
     }
 
     private async Task OpenMonitoringDialog(Guid workflowId, Guid executionId)

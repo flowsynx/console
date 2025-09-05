@@ -4,9 +4,6 @@
     let zoomLevel = 1;
     let isReadOnly = false;
 
-    // -----------------------------
-    // Helper Functions
-    // -----------------------------
     const ensureContainer = (containerId) => {
         const el = document.getElementById(containerId);
         if (!el) throw new Error(`Drawflow container not found: ${containerId}`);
@@ -16,28 +13,25 @@
     const bindNodeEvents = (id) => {
         if (isReadOnly) return;
 
-        const el = document.querySelector(`#node-${id}`);
+        const el = document.getElementById(`node-${id}`);
         if (!el) return;
 
         el.addEventListener("dblclick", () =>
-            dotnet.invokeMethodAsync("OnNodeDoubleClicked", id.toString())
+            dotnet?.invokeMethodAsync("OnNodeDoubleClicked", id.toString())
         );
     };
 
     const safeInvoke = (method, ...args) => {
-        if (dotnet) dotnet.invokeMethodAsync(method, ...args);
+        dotnet?.invokeMethodAsync(method, ...args);
     };
 
-    // -----------------------------
-    // Arrowhead Helpers
-    // -----------------------------
     const addArrowheadToPath = (pathEl) => {
         if (!pathEl) return;
 
         const arrow = document.createElement("div");
         arrow.className = "drawflow-arrowhead";
-        pathEl.arrowEl = arrow; // keep reference
-        editor.precanvas.appendChild(arrow);
+        pathEl.arrowEl = arrow;
+        editor?.precanvas.appendChild(arrow);
 
         const updatePosition = () => {
             try {
@@ -49,7 +43,7 @@
                 arrow.style.left = `${point.x}px`;
                 arrow.style.top = `${point.y}px`;
                 arrow.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
-            } catch { /* ignore */ }
+            } catch { }
         };
 
         updatePosition();
@@ -57,31 +51,23 @@
         obs.observe(pathEl, { attributes: true, attributeFilter: ["d"] });
     };
 
-    // -----------------------------
-    // Core API
-    // -----------------------------
     const init = (containerId, dotNetRef, options = {}) => {
         dotnet = dotNetRef;
-        isReadOnly = options.readOnly || false;
+        isReadOnly = !!options.readOnly;
 
         const container = ensureContainer(containerId);
-
         editor = new Drawflow(container);
         editor.reroute = true;
         editor.start();
         zoomLevel = 1;
-        if (!isReadOnly)
-            container.classList.add("drawflow-canvas");
 
-        // Apply read-only
+        if (!isReadOnly) container.classList.add("drawflow-canvas");
         editor.editor_mode = isReadOnly ? "view" : "edit";
 
-        // Mousewheel zoom
         container.addEventListener("wheel", (e) => {
             if (e.ctrlKey) {
                 e.preventDefault();
-                if (e.deltaY < 0) zoomIn();
-                else zoomOut();
+                e.deltaY < 0 ? zoomIn() : zoomOut();
             }
         });
 
@@ -90,26 +76,28 @@
             editor.on("nodeUnselected", () => safeInvoke("OnNodeUnselected"));
             editor.on("nodeRemoved", (id) => safeInvoke("OnNodeRemoved", id.toString()));
             editor.on("nodeMoved", (id) => {
-                const node = editor.getNodeFromId(id);
-                if (node) {
-                    safeInvoke("OnNodeMoved", id.toString(), node.pos_x, node.pos_y);
-                }
+                const node = editor.getNodeFromId(+id);
+                if (node) safeInvoke("OnNodeMoved", id.toString(), node.pos_x, node.pos_y);
             });
             editor.on("connectionCreated", ({ output_id, input_id }) => {
                 safeInvoke("OnConnectionCreated", output_id.toString(), input_id.toString());
-                setTimeout(() => {
-                    const pathEl = container.querySelector(
-                        `.connection.node_in_${input_id}.node_out_${output_id} path.main-path`
-                    );
+
+                requestAnimationFrame(() => {
+                    const pathEl = Array.from(container.querySelectorAll("path.main-path"))
+                        .find(p => {
+                            const conn = p.closest(".connection");
+                            return conn?.classList.contains(`node_in_${input_id}`) &&
+                                conn?.classList.contains(`node_out_${output_id}`);
+                        });
                     if (pathEl) addArrowheadToPath(pathEl);
-                }, 50);
+                });
             });
             editor.on("connectionRemoved", ({ output_id, input_id }) => {
                 safeInvoke("OnConnectionRemoved", output_id.toString(), input_id.toString());
                 const pathEl = container.querySelector(
                     `.connection.node_in_${input_id}.node_out_${output_id} path.main-path`
                 );
-                if (pathEl && pathEl.arrowEl) pathEl.arrowEl.remove();
+                pathEl?.arrowEl?.remove();
             });
         }
 
@@ -121,7 +109,13 @@
     const addNode = (name, data, x, y) => {
         const id = editor.addNode(
             name, 1, 1, x, y, name, data,
-            `<div class="title-box">${name}</div><div>${data.type || ""}</div>`
+            `<div class="title-box">
+            <div class="title-text">
+                <div>${name}</div>
+                <div class="title-type">${data.type || ""}</div>
+            </div>
+            <span class="status-icon"></span>
+        </div>`
         );
         bindNodeEvents(id);
         return id;
@@ -130,23 +124,34 @@
     const updateNodeTitle = (id, name, type) => {
         const node = editor.getNodeFromId(+id);
         if (!node) return;
+
         node.name = name;
-        node.html = `<div class="title-box">${name}</div><div>${type || ""}</div>`;
+        node.html = `<div class="title-box">
+        <div class="title-text">
+            <div>${name}</div>
+            <div class="title-type">${type || ""}</div>
+        </div>
+        <span class="status-icon"></span>
+    </div>`;
+
         editor.updateNodeDataFromId(+id, node.data);
         bindNodeEvents(id);
     };
 
-    const exportDrawflow = () => JSON.stringify(editor.export());
+    const exportDrawflow = () => JSON.stringify(editor?.export() || {});
     const importDrawflow = (json) => {
-        editor.clear();
-        editor.import(JSON.parse(json));
+        editor?.clear();
+        editor?.import(JSON.parse(json));
     };
 
-    const connect = (fromId, toId) =>
-        editor.addConnection(+fromId, +toId, "output_1", "input_1");
+    const connect = (fromId, toId) => {
+        requestAnimationFrame(() => {
+            editor?.addConnection(+fromId, +toId, "output_1", "input_1");
+        });
+    };
 
     const disconnect = (fromId, toId) =>
-        editor.removeSingleConnection({
+        editor?.removeSingleConnection({
             output_id: +fromId,
             input_id: +toId,
             output_class: "output_1",
@@ -154,18 +159,16 @@
         });
 
     const getNodeData = (id) => {
-        const node = editor.getNodeFromId(+id);
+        const node = editor?.getNodeFromId(+id);
         return node ? JSON.stringify(node) : null;
     };
 
     const setNodeData = (id, data) => {
+        if (!editor) return;
         const obj = typeof data === "string" ? JSON.parse(data) : data;
         editor.updateNodeDataFromId(+id, obj);
     };
 
-    // -----------------------------
-    // Zoom & Pan
-    // -----------------------------
     const applyZoom = () => {
         if (!editor) return;
         editor.precanvas.style.transform = `translate(${editor.canvas_x}px, ${editor.canvas_y}px) scale(${zoomLevel})`;
@@ -176,9 +179,19 @@
     const zoomReset = () => { zoomLevel = 1; editor.canvas_x = 0; editor.canvas_y = 0; applyZoom(); };
     const center = () => { zoomLevel = 1; editor.canvas_x = 0; editor.canvas_y = 0; applyZoom(); };
 
-    // -----------------------------
-    // Public API
-    // -----------------------------
+    const setNodeStatus = (id, status) => {
+        const el = document.getElementById(`node-${id}`);
+        if (!el) return;
+
+        el.classList.remove(
+            "status-pending", "status-running", "status-completed",
+            "status-canceled", "status-failed", "status-retrying"
+        );
+
+        if (["pending", "running", "completed", "canceled", "failed", "retrying"].includes(status))
+            el.classList.add(`status-${status}`);
+    };
+
     return {
         init,
         clear,
@@ -194,5 +207,6 @@
         zoomOut,
         zoomReset,
         center,
+        setNodeStatus
     };
 })();

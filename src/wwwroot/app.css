@@ -70,7 +70,6 @@ h1:focus {
     margin-left: 36px;
     padding: 3px;
     border-radius: 4px;
-    /*background-color: rgba(255, 255, 255, 0.15);*/
     color: var(--mud-palette-appbar-text) !important;
 }
 
@@ -113,7 +112,6 @@ h1:focus {
     transition: opacity 0.2s ease-in-out;
 }
 
-/* show only when hovering row */
 .mud-table tr:hover .action-cell .actions-toolbar {
     display: flex;
     opacity: 1;

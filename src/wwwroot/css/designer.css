@@ -153,7 +153,6 @@
     z-index: 30;
 }
 
-/* Port holder (circular background around joint) */
 .drawflow .drawflow-node .port-holder {
     position: absolute;
     width: 20px;
@@ -164,7 +163,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none; /* holder is not clickable */
+    pointer-events: none;
     z-index: 4;
 }
 
@@ -182,11 +181,6 @@
     .drawflow .connection .main-path.selected {
         stroke: var(--mud-palette-primary);
     }
-
-.drawflow .title-box {
-    padding: 3px;
-    border-radius: 5px;
-}
 
 .drawflow .drawflow-node {
     background: var(--mud-palette-background);
@@ -208,7 +202,6 @@
         border-color: var(--mud-palette-primary-lighten);
     }
 
-    /* Socket holders */
     .drawflow .drawflow-node .input,
     .drawflow .drawflow-node .output {
         width: 16px;
@@ -224,21 +217,18 @@
         z-index: 4;
     }
 
-    /* Left side sockets */
     .drawflow .drawflow-node .input {
-        left: -10px; /* half out, half in */
+        left: -10px;
         top: 50%;
         transform: translateY(-50%);
     }
 
-    /* Right side sockets */
     .drawflow .drawflow-node .output {
         right: -10px;
         top: 50%;
         transform: translateY(-50%);
     }
 
-        /* Inner joint (smaller circle inside holder) */
         .drawflow .drawflow-node .input::before,
         .drawflow .drawflow-node .output::before {
             content: "";
@@ -250,7 +240,6 @@
             z-index: 6;
         }
 
-    /* Hover + active states */
     .drawflow .drawflow-node:hover .input,
     .drawflow .drawflow-node.active .input,
     .drawflow .drawflow-node.selected .input,
@@ -266,7 +255,6 @@
             background: var(--mud-palette-primary-lighten);
         }
 
-/* Arrowhead styling stays */
 .drawflow-arrowhead {
     position: absolute;
     width: 0;
@@ -276,4 +264,85 @@
     border-top: 1px solid var(--mud-palette-lines-default);
     transform: translate(-50%, -50%) rotate(0deg);
     pointer-events: none;
+}
+
+.title-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title-text {
+    display: block;
+    flex-direction: column;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 150px;
+}
+
+.title-type {
+    font-size: 0.8em;
+    color: var(--mud-palette-gray-default) !important;
+    display: block;
+    flex-direction: column;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 150px;
+}
+
+.status-icon {
+    width: 16px;
+    height: 16px;
+    background-size: cover;
+}
+
+.drawflow .title-box .status-icon::before {
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.status-pending .status-icon::before {
+    background-color: var(--mud-palette-background);
+    color: var(--mud-palette-text-secondary);
+    content: "●";
+}
+
+.status-running .status-icon::before {
+    background-color: var(--mud-palette-primary-light);
+    color: var(--mud-palette-primary);
+    content: "⏳";
+}
+
+.status-completed .status-icon::before {
+    background-color: var(--mud-palette-success);
+    color: var(--mud-palette-success-text);
+    content: "✔";
+}
+
+.status-canceled .status-icon::before {
+    background-color: var(--mud-palette-dark);
+    color: var(--mud-palette-text-secondary);
+    content: "⦸";
+}
+
+.status-failed .status-icon::before {
+    background-color: var(--mud-palette-error);
+    color: var(--mud-palette-error-text);
+    content: "✖";
+}
+
+.status-retrying .status-icon::before {
+    background-color: var(--mud-palette-info);
+    color: var(--mud-palette-background);
+    content: "↻";
 }

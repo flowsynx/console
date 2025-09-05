@@ -84,7 +84,7 @@
         await JSRuntime.InvokeVoidAsync("fsDrawflow.clear");
         foreach (var t in Workflow.Tasks)
         {
-            var data = new { name = t.Name, type = t.Type, parameters = t.Parameters };
+            var data = new { name = t.Name, type = t.Type ?? "LocalFileSystem", parameters = t.Parameters };
             var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", t.Name, data, (double)(t.Position.X == 0 ? 100 : t.Position.X), (double)(t.Position.Y == 0 ? 100 : t.Position.Y));
             t.NodeId = id.ToString();
         }
@@ -108,7 +108,7 @@
                 Position = new(120 + (Workflow.Tasks.Count % 5) * 140, 120 + (Workflow.Tasks.Count / 5) * 120)
             };
         Workflow.Tasks.Add(newTask);
-        var data = new { name = newTask.Name, type = newTask.Type, parameters = newTask.Parameters };
+        var data = new { name = newTask.Name, type = newTask.Type ?? "LocalFileSystem", parameters = newTask.Parameters };
         var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", newTask.Name, data, (double)newTask.Position.X, (double)newTask.Position.Y);
         newTask.NodeId = id.ToString();
         StateHasChanged();
@@ -126,7 +126,7 @@
     }
 
     private Task UpdateNodeTitle() =>
-        SelectedTask != null ? JSRuntime.InvokeVoidAsync("fsDrawflow.updateNodeTitle", SelectedTask.NodeId, SelectedTask.Name, SelectedTask.Type).AsTask() : Task.CompletedTask;
+        SelectedTask != null ? JSRuntime.InvokeVoidAsync("fsDrawflow.updateNodeTitle", SelectedTask.NodeId, SelectedTask.Name, SelectedTask.Type ?? "LocalFileSystem").AsTask() : Task.CompletedTask;
 
     private async void ShowPropertiesDialog(WorkflowTask task)
     {
