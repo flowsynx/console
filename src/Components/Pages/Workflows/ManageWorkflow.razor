@@ -21,7 +21,7 @@
          Border="true"
          ApplyEffectsToContainer="true"
          Class="mb-4">
-    <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.DesignServices">
+    <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.DesignServices" Disabled="@IsProcessing">
         <MudToolBar Dense="true" Gutters="false" Class="toolbar">
             <MudTooltip Text="Save workflow">
                 <MudButton Variant="Variant.Filled"
@@ -79,11 +79,11 @@
         </MudToolBar>
         @RenderCurrentView()
     </MudTabPanel>
-    <MudTabPanel Text="Executions" Icon="@Icons.Material.Filled.PlayArrow">
-        <WorkflowExecutions workflowId="@id" />
+    <MudTabPanel Text="Executions" Icon="@Icons.Material.Filled.PlayArrow" Disabled="@IsProcessing">
+        <WorkflowExecutions WorkflowId="@id" />
     </MudTabPanel>
-    <MudTabPanel Text="Triggers" Icon="@Icons.Material.Filled.Bolt">
-        <WorkflowTriggers workflowId="@id" />
+    <MudTabPanel Text="Triggers" Icon="@Icons.Material.Filled.Bolt" Disabled="@IsProcessing">
+        <WorkflowTriggers WorkflowId="@id" />
     </MudTabPanel>
 </MudTabs>
 
