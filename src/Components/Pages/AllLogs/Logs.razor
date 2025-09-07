@@ -1,0 +1,170 @@
+﻿@page "/logs"
+@using FlowSynx.Client.Messages.Requests.Logs
+@using FlowSynx.Client.Messages.Responses.Logs
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
+
+<PageTitle>FlowSynx Logs</PageTitle>
+
+<HeaderTitle Title="Logs" Description="Search and browse execution logs with filtering options." />
+
+<MudPaper Class="px-4 pb-4 mb-4">
+    <MudForm>
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="12">
+                <MudTextField @bind-Value="LogsListRequest.Message"
+                              Label="Message contains..."
+                              Variant="Variant.Text"
+                              Margin="Margin.Dense"
+                              HelperText="Filter logs by message content" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudSelect T="string"
+                           For="@(() => LogsListRequest.Level)"
+                           @bind-Value="LogsListRequest.Level"
+                           Label="Level"
+                           Variant="Variant.Text"
+                           Dense="true"
+                           OpenIcon="@Icons.Material.Filled.ArrowDropDown"
+                           CloseIcon="@Icons.Material.Filled.ArrowDropUp"
+                           HelperText="Select the log level to filter (e.g., Info, Warn)">
+                    @foreach (var level in Enum.GetValues<LogsLevel>())
+                    {
+                        <MudSelectItem Value="@level.ToString().ToLower()">@level</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudDatePicker @bind-Date="LogsListRequest.FromDate"
+                               Label="From date"
+                               Variant="Variant.Text"
+                               HelperText="Show logs starting from this date"
+                               Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudDatePicker @bind-Date="LogsListRequest.ToDate"
+                               Label="To date"
+                               Variant="Variant.Text"
+                               HelperText="Show logs up to this date"
+                               Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="6">
+                <MudButton Variant="Variant.Filled"
+                           OnClick="ApplyFilters"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           Color="Color.Primary">Search</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+
+<MudTable T="LogsListResponse"
+          ServerData="LoadLogs"
+          Dense="true"
+          Hover="true"
+          Bordered="false"
+          Striped="false"
+          @ref="_table"
+          LoadingProgressColor="Color.Primary">
+    <HeaderContent>
+        <MudTh>Timestamp</MudTh>
+        <MudTh>Level</MudTh>
+        <MudTh>Message</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd DataLabel="Timestamp">@context.TimeStamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+        <MudTd DataLabel="Level">@context.Level</MudTd>
+        <MudTd DataLabel="Message">@context.Message</MudTd>
+    </RowTemplate>
+
+    <NoRecordsContent>
+        <MudText>No logs found</MudText>
+    </NoRecordsContent>
+
+    <LoadingContent>
+        <MudText>Loading logs...</MudText>
+    </LoadingContent>
+
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private string? token;
+    private MudTable<LogsListResponse>? _table;
+
+    private LogsListRequest LogsListRequest { get; set; } = new()
+        {
+            Level = "",
+            Message = string.Empty,
+            FromDate = null,
+            ToDate = null
+        };
+
+    private async Task<TableData<LogsListResponse>> LoadLogs(TableState state, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+            token = string.IsNullOrEmpty(accessTokenResult) ? null : accessTokenResult;
+
+            if (string.IsNullOrEmpty(token))
+            {
+                SnackBar.Add("No token available or user not authenticated.", Severity.Error);
+                return new TableData<LogsListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            FlowSynxClient.SetAuthenticationStrategy(new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token));
+
+            var result = await FlowSynxClient.Logs.ListAsync(LogsListRequest, cancellationToken);
+
+            if (result.StatusCode != 200 || !result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Failed to load logs: {errorMessage}", Severity.Error);
+                return new TableData<LogsListResponse> { Items = [], TotalItems = 0 };
+            }
+
+            var logs = result.Payload.Data.ToList();
+
+            return new TableData<LogsListResponse>
+                {
+                    Items = logs,
+                    TotalItems = logs.Count
+                };
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new TableData<LogsListResponse> { Items = [], TotalItems = 0 };
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        if (_table != null)
+            await _table.ReloadServerData();
+    }
+
+    public enum LogsLevel
+    {
+        All,
+        Dbug,
+        Info,
+        Warn,
+        Fail,
+        Crit,
+    }
+}
