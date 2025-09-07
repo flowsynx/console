@@ -1,4 +1,5 @@
-﻿@using FlowSynx.Client.Messages.Responses.Plugins
+﻿@using Console.Models
+@using FlowSynx.Client.Messages.Responses.Plugins
 @attribute [Authorize]
 @inject IAccessTokenProvider TokenProvider
 @inject IFlowSynxClient FlowSynxClient
@@ -12,74 +13,135 @@
               DebounceInterval="150"
               Clearable="true" />
 
-<MudList T="string" Dense="true" Class="mt-1">
+<MudExpansionPanels Outlined="true"
+                    Gutters="false"
+                    Dense="true"
+                    Square="true"
+                    Elevation="0"
+                    MultiExpansion="true">
     @if (FilteredItems.Count == 0)
     {
-        <MudListItem Disabled="true">
-            <MudText Typo="Typo.caption" Color="Color.Secondary">No matches</MudText>
-        </MudListItem>
+        <MudExpansionPanel Disabled="true" Gutters="false" Dense="true" Class="no-gap">
+            <TitleContent>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">No matches</MudText>
+            </TitleContent>
+        </MudExpansionPanel>
     }
     else
     {
         @foreach (var item in FilteredItems)
         {
-            <MudListItem OnClick="@(() => OnItemClick.InvokeAsync(item))">
-                <MudText>@item</MudText>
-            </MudListItem>
+            <MudExpansionPanel Gutters="false" Dense="true" Class="no-gap">
+                <TitleContent>
+                    <MudText Typo="Typo.subtitle2"
+                             Class="cursor-pointer"
+                             @ondblclick="() => ApplyLatest(item)">
+                        @item.Type
+                    </MudText>
+                </TitleContent>
+
+                <ChildContent>
+                    <MudList T="object" Dense="true">
+                        @foreach (var version in item.Versions)
+                        {
+                            <MudListItem T="object"
+                                         OnClick="@(() => OnItemClick.InvokeAsync((item.Type, version)))">
+                                <MudText Typo="Typo.body2">Version: @version</MudText>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </ChildContent>
+            </MudExpansionPanel>
         }
     }
-</MudList>
+</MudExpansionPanels>
 
 @code {
-    [Parameter] public EventCallback<string> OnItemClick { get; set; }
-    private List<string> Items { get; set; } = new();
+    [Parameter] public EventCallback<(string Type, string Version)> OnItemClick { get; set; }
+
+    private List<PluginTypeInfo> Items { get; set; } = new();
     private string _search = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         Items = await LoadPluginTypes(CancellationToken.None);
+        Items.Insert(0, new PluginTypeInfo { Type = "LocalFileSystem", Versions = new List<string>() });
     }
 
-    private List<string> FilteredItems =>
+    private List<PluginTypeInfo> FilteredItems =>
         string.IsNullOrWhiteSpace(_search)
             ? Items
-            : Items.Where(i => i.Contains(_search, StringComparison.OrdinalIgnoreCase)).ToList();
+            : Items
+                .Where(i =>
+                    i.Type.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                    i.Versions.Any(v => v.Contains(_search, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
 
-    private async Task<List<string>> LoadPluginTypes(CancellationToken cancellationToken)
+    private async Task<List<PluginTypeInfo>> LoadPluginTypes(CancellationToken cancellationToken)
     {
         try
         {
             var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
             string? token;
 
-            if (string.IsNullOrEmpty(accessTokenResult))
-                token = "No token available or user not authenticated.";
-            else
-                token = accessTokenResult;
+            token = string.IsNullOrEmpty(accessTokenResult)
+                ? "No token available or user not authenticated."
+                : accessTokenResult;
 
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+
             var result = await FlowSynxClient.Plugins.ListAsync(cancellationToken);
 
             if (result.StatusCode != 200)
             {
                 SnackBar.Add("Failed to load plugins: Bad response code.", Severity.Error);
-                return new List<string>();
+                return new List<PluginTypeInfo>();
             }
 
             if (!result.Payload.Succeeded)
             {
                 var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
                 SnackBar.Add($"Plugin error:\n{errorMessage}", Severity.Error);
-                return new List<string>();
+                return new List<PluginTypeInfo>();
             }
 
-            return result.Payload.Data.Select(x=>x.Type).ToList();
+            // Group plugins by type, collect versions
+            return result.Payload.Data
+                .GroupBy(p => p.Type)
+                .Select(g => new PluginTypeInfo
+                    {
+                        Type = g.Key,
+                        Versions = g.Select(x => x.Version)
+                                    .Distinct()
+                                    .OrderByDescending(v => v) // latest first
+                                    .ToList()
+                    })
+                .ToList();
         }
         catch (Exception ex)
         {
             SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
-            return new List<string>();
+            return new List<PluginTypeInfo>();
         }
+    }
+
+    private void ApplyLatest(PluginTypeInfo plugin)
+    {
+        if (plugin.Versions.Any())
+        {
+            var latest = plugin.Versions.First(); // versions are sorted descending
+            OnItemClick.InvokeAsync((plugin.Type, latest));
+        }
+        else
+        {
+            OnItemClick.InvokeAsync((plugin.Type, string.Empty));
+        }
+    }
+
+    private class PluginTypeInfo
+    {
+        public string Type { get; set; } = string.Empty;
+        public List<string> Versions { get; set; } = new();
     }
 }

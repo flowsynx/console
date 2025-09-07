@@ -17,7 +17,7 @@
 
         <!-- Palette -->
         <div class="palette @(IsPaletteVisible ? "visible" : "hidden")">
-            <HeaderTitle Title="Plugins" />
+            <HeaderTitle Title="Plugins" Class="px-2 py-2" />
             <SearchablePluginsList OnItemClick="AddNodeTemplate" />
         </div>
     </div>
@@ -99,17 +99,48 @@
         }
     }
 
-    private async Task AddNodeTemplate(string type)
+    private async Task AddNodeTemplate((string type, string version) plugin)
     {
+        var typeValue = plugin.type == "LocalFileSystem"
+            ? (object)"LocalFileSystem"
+            : new
+            {
+                Plugin = plugin.type,
+                Version = plugin.version,
+                Specifications = new Dictionary<string, string>()
+            };
+
         var newTask = new WorkflowTask
             {
-                Name = $"{type}-{Workflow.Tasks.Count + 1}",
-                Type = type,
-                Position = new(120 + (Workflow.Tasks.Count % 5) * 140, 120 + (Workflow.Tasks.Count / 5) * 120)
+                Name = $"{plugin.type}-{Workflow.Tasks.Count + 1}",
+                Type = typeValue,
+                Position = new(
+                    120 + (Workflow.Tasks.Count % 5) * 140,
+                    120 + (Workflow.Tasks.Count / 5) * 120
+                )
             };
+
         Workflow.Tasks.Add(newTask);
-        var data = new { name = newTask.Name, type = newTask.Type ?? "LocalFileSystem", parameters = newTask.Parameters };
-        var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", newTask.Name, data, (double)newTask.Position.X, (double)newTask.Position.Y);
+
+        string displayType = plugin.type == "LocalFileSystem"
+            ? "LocalFileSystem"
+            : $"{plugin.type} ({plugin.version})";
+
+        var data = new
+        {
+            name = newTask.Name,
+            type = displayType,   // now always a string
+            parameters = newTask.Parameters
+        };
+
+        var id = await JSRuntime.InvokeAsync<int>(
+            "fsDrawflow.addNode",
+            newTask.Name,
+            data,
+            (double)newTask.Position.X,
+            (double)newTask.Position.Y
+        );
+
         newTask.NodeId = id.ToString();
         StateHasChanged();
     }
