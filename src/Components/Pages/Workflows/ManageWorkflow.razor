@@ -92,7 +92,7 @@
     public Guid id { get; set; }
 
     private bool IsProcessing = false;
-    private Workflow Workflow => WorkflowService.Get();
+    private Workflow Workflow { get; set; } = new Workflow();
     private string? _workflowJson;
     private UpdateWorkflowRequest UpdateWorkflowRequest = new UpdateWorkflowRequest
             {
@@ -137,6 +137,8 @@
 
             _workflowJson = payload.Data.Workflow;
             WorkflowService.SetJson(_workflowJson);
+            Workflow = WorkflowService.Get();
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -160,7 +162,9 @@
     {
         View.Code => @<WorkflowJsonEditor JsonContent="@_workflowJson"
                     JsonContentChanged="v => _workflowJson = v" />,
-        View.Designer => @<WorkflowDesigner Workflow="@Workflow" />,
+        View.Designer => Workflow is not null && Workflow.Tasks?.Any() == true
+                ? @<WorkflowDesigner Workflow="@Workflow" />
+                : @<MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />,
         _ => @<p>Unknown view</p>
     };
 

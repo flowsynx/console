@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Components
+@using System.Text.Json
 @implements IAsyncDisposable
 
 @inject IJSRuntime JSRuntime
@@ -8,11 +9,11 @@
     <div class="palette-container">
         <MudTooltip Text="@(IsPaletteVisible ? "Close panel" : "Open panel and add plugins")">
             <MudIconButton Variant="Variant.Filled"
-                           Size="Size.Medium"
-                           Icon="@(IsPaletteVisible ? Icons.Material.Filled.Close : Icons.Material.Filled.Add)"
-                           Color="Color.Primary"
-                           Class="palette-toggle"
-                           OnClick="TogglePalette" />
+            Size="Size.Medium"
+            Icon="@(IsPaletteVisible ? Icons.Material.Filled.Close : Icons.Material.Filled.Add)"
+            Color="Color.Primary"
+            Class="palette-toggle"
+            OnClick="TogglePalette" />
         </MudTooltip>
 
         <!-- Palette -->
@@ -26,24 +27,24 @@
     <div class="canvas-wrap">
         <div class="canvas-toolbar">
             <MudIconButton Variant="Variant.Text"
-                           Size="Size.Medium"
-                           Icon="@Icons.Material.Filled.ZoomIn"
-                           OnClick="ZoomIn" />
+            Size="Size.Medium"
+            Icon="@Icons.Material.Filled.ZoomIn"
+            OnClick="ZoomIn" />
 
             <MudIconButton Variant="Variant.Text"
-                           Size="Size.Medium"
-                           Icon="@Icons.Material.Filled.ZoomOut"
-                           OnClick="ZoomOut" />
+            Size="Size.Medium"
+            Icon="@Icons.Material.Filled.ZoomOut"
+            OnClick="ZoomOut" />
 
             <MudIconButton Variant="Variant.Text"
-                           Size="Size.Medium"
-                           Icon="@Icons.Material.Filled.Refresh"
-                           OnClick="ZoomReset" />
+            Size="Size.Medium"
+            Icon="@Icons.Material.Filled.Refresh"
+            OnClick="ZoomReset" />
 
             <MudIconButton Variant="Variant.Text"
-                           Size="Size.Medium"
-                           Icon="@Icons.Material.Filled.FilterCenterFocus"
-                           OnClick="Center" />
+            Size="Size.Medium"
+            Icon="@Icons.Material.Filled.FilterCenterFocus"
+            OnClick="Center" />
         </div>
         <div id="drawflow" style="height:100%;"></div>
     </div>
@@ -82,12 +83,62 @@
     private async Task LoadWorkflowIntoCanvas()
     {
         await JSRuntime.InvokeVoidAsync("fsDrawflow.clear");
-        foreach (var t in Workflow.Tasks)
+
+        foreach (var task in Workflow.Tasks)
         {
-            var data = new { name = t.Name, type = t.Type ?? "LocalFileSystem", parameters = t.Parameters };
-            var id = await JSRuntime.InvokeAsync<int>("fsDrawflow.addNode", t.Name, data, (double)(t.Position.X == 0 ? 100 : t.Position.X), (double)(t.Position.Y == 0 ? 100 : t.Position.Y));
-            t.NodeId = id.ToString();
+            string displayType;
+
+            if (task.Type is JsonElement json)
+            {
+                if (json.ValueKind == JsonValueKind.String)
+                {
+                    displayType = json.GetString() ?? "";
+                }
+                else if (json.ValueKind == JsonValueKind.Object)
+                {
+                    string? plugin = json.TryGetProperty("Plugin", out var pluginProp) ? pluginProp.GetString() : null;
+                    string? version = json.TryGetProperty("Version", out var versionProp) ? versionProp.GetString() : null;
+
+                    displayType = !string.IsNullOrWhiteSpace(plugin) && !string.IsNullOrWhiteSpace(version)
+                        ? $"{plugin} ({version})"
+                        : plugin ?? "Unknown";
+                }
+                else
+                {
+                    displayType = "Unknown";
+                }
+            }
+            else if (task.Type != null)
+            {
+                var pluginProp = task.Type.GetType().GetProperty("Plugin")?.GetValue(task.Type)?.ToString();
+                var versionProp = task.Type.GetType().GetProperty("Version")?.GetValue(task.Type)?.ToString();
+
+                displayType = !string.IsNullOrWhiteSpace(pluginProp) && !string.IsNullOrWhiteSpace(versionProp)
+                    ? $"{pluginProp} ({versionProp})"
+                    : pluginProp ?? "Unknown";
+            }
+            else
+            {
+                displayType = "Unknown";
+            }
+
+            var data = new
+            {
+                name = task.Name,
+                type = displayType,
+                parameters = task.Parameters
+            };
+
+            var id = await JSRuntime.InvokeAsync<int>(
+                "fsDrawflow.addNode",
+                task.Name,
+                data,
+                (double)(task.Position.X == 0 ? 100 : task.Position.X),
+                (double)(task.Position.Y == 0 ? 100 : task.Position.Y)
+            );
+            task.NodeId = id.ToString();
         }
+
         foreach (var t in Workflow.Tasks)
         {
             foreach (var dep in t.Dependencies)
@@ -102,7 +153,7 @@
     private async Task AddNodeTemplate((string type, string version) plugin)
     {
         var typeValue = plugin.type == "LocalFileSystem"
-            ? (object)"LocalFileSystem"
+            ? (object)""
             : new
             {
                 Plugin = plugin.type,
@@ -123,13 +174,13 @@
         Workflow.Tasks.Add(newTask);
 
         string displayType = plugin.type == "LocalFileSystem"
-            ? "LocalFileSystem"
+            ? ""
             : $"{plugin.type} ({plugin.version})";
 
         var data = new
         {
             name = newTask.Name,
-            type = displayType,   // now always a string
+            type = displayType,
             parameters = newTask.Parameters
         };
 
