@@ -1,0 +1,174 @@
+name: flowsynx
+
+on:
+  workflow_dispatch:
+    inputs:
+      rel_version:
+        description: 'Release version (examples: 1.9.0-rc.1, 1.9.1)'
+        required: true
+        type: string
+
+env:
+  DOCKER_USER_NAME: ${{ github.repository_owner }}
+  DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        os_arch: [x64, arm, arm64]
+        include:
+          - os: ubuntu-latest
+            kind: linux
+            title: linux
+          - os: windows-latest
+            kind: win
+            title: windows
+          - os: macos-latest
+            kind: osx
+            title: osx
+        exclude:
+          - os: windows-latest
+            os_arch: arm
+          - os: macos-latest
+            os_arch: arm
+    runs-on: ${{ matrix.os }}
+    env:
+      ARCHIVE_OUTDIR: dist/archives
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.7
+        with:
+          versionSpec: 5.x
+
+      - name: Determine Version
+        uses: gittools/actions/gitversion/execute@v0.9.7
+        id: gitversion
+
+      - name: Display GitVersion outputs
+        run: |
+            echo "Version: ${{ inputs.rel_version }}"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3.2.0
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Publish
+        run: |
+          release_name="console-${{ matrix.title }}-${{ matrix.os_arch }}"
+          dotnet publish src/Console.csproj \
+            -p:PublishSingleFile=true \
+            -p:PublishReadyToRun=true \
+            --runtime "${{ matrix.kind }}-${{ matrix.os_arch }}" \
+            -c Release --self-contained true \
+            -p:Version="${{ inputs.rel_version }}" \
+            -o "${{ github.workspace }}/$release_name"
+
+          mkdir -p "${{ github.workspace }}/dist"
+          cd "${{ github.workspace }}/$release_name"
+
+          if [[ "${{ matrix.kind }}" == "win" ]]; then
+            7z a -tzip "${{ github.workspace }}/dist/${release_name}.zip" *
+          else
+            tar czvf "${{ github.workspace }}/dist/${release_name}.tar.gz" *
+          fi
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-${{ matrix.title }}-${{ matrix.os_arch }}
+          path: "${{ github.workspace }}/dist"
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    env:
+      ARTIFACT_DIR: ./release
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: console-*
+          path: ${{ env.ARTIFACT_DIR }}
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd ${ARTIFACT_DIR}
+          for i in *; do sha256sum -b "$i" > "$i.sha256"; done
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ inputs.rel_version }}
+          name: Console v${{ inputs.rel_version }}
+          body: "This is the v${{ inputs.rel_version }} release of FlowSynx Console"
+          artifacts: "**/*.*"
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Create Branch
+        uses: peterjgrainger/action-create-branch@v2.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          branch: release-${{ inputs.rel_version }}
+          sha: ${{ github.event.pull_request.head.sha }}
+
+  compute:
+    runs-on: ubuntu-latest
+    outputs:
+      docker_user_name: ${{ env.DOCKER_USER_NAME }}
+      docker_image_name: ${{ env.DOCKER_IMAGE_NAME }}
+
+    steps:
+      - name: Compute Outputs
+        run: |
+          echo "docker_user_name=${{ env.DOCKER_USER_NAME }}" >> $GITHUB_OUTPUT
+          echo "docker_image_name=${{ env.DOCKER_IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
+  docker:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-2022]
+        include:
+          - os: ubuntu-latest
+            file: docker/Dockerfile.Linux
+            tag_suffix: linux-amd64
+          - os: windows-2022
+            file: docker/Dockerfile.Windows
+            tag_suffix: windows-ltsc2022-amd64
+    runs-on: ${{ matrix.os }}
+    needs: [compute, build, release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Image
+        run: |
+          IMAGE_NAME=${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}
+          TAG="${IMAGE_NAME}:${{ inputs.rel_version }}-${{ matrix.tag_suffix }}"
+
+          docker build -f ${{ matrix.file }} \
+            --build-arg APP_VERSION=${{ inputs.rel_version }} \
+            -t $TAG .
+
+          docker push $TAG
