@@ -9,7 +9,7 @@ WORKDIR /code
 
 COPY ["src/Console.csproj", "src/Console/"]
 
-RUN dotnet restore "./src/Console.csproj"
+RUN dotnet restore "./src/Console/Console.csproj"
 
 COPY . .
 WORKDIR "/code/src/Console"
@@ -25,4 +25,4 @@ USER app
 WORKDIR /app
 EXPOSE 6264
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Console.dll"]
+ENTRYPOINT ["dotnet", "console.dll"]
