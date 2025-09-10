@@ -1,4 +1,4 @@
-name: flowsynx
+name: console
 
 on:
   workflow_dispatch:
