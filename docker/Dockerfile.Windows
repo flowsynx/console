@@ -9,12 +9,12 @@ ENV NUGET_PACKAGES="C:\\nuget"
 
 WORKDIR /code
 
-COPY ["src/Console.csproj", "src/Console/"]
+COPY ["src/Console.csproj", "src/"]
 
-RUN dotnet restore "./src/Console/Console.csproj"
+RUN dotnet restore "./src/Console.csproj"
 
 COPY . .
-WORKDIR "/code/src/Console"
+WORKDIR "/code/src"
 RUN dotnet build "./Console.csproj" -c %BUILD_CONFIGURATION% -o /app/build --no-restore
 
 FROM build AS publish
