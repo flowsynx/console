@@ -158,7 +158,7 @@ designed for scalability, security, and extensibility.
 We welcome community contributions!
 - Submit issues or feature requests via [GitHub Issues](https://github.com/flowsynx/console/issues).
 - Open pull requests with clear documentation and test coverage.
-- Adhere to coding standards and best practices outlined in our [Contribution Guidelines](https://github.com/flowsynx/console/CONTRIBUTING.md).
+- Adhere to coding standards and best practices outlined in our [Contribution Guidelines](https://github.com/flowsynx/console/blob/master/CONTRIBUTING.md).
 
 ------------------------------------------------------------------------
 
