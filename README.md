@@ -183,8 +183,3 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 -   Documentation: [flowsynx.io/docs](https://flowsynx.io/docs/overview)
 -   Support: <support@flowsynx.io>
-
-------------------------------------------------------------------------
-
-**FlowSynx Console** --- Orchestrate. Automate. Monitor.
-*Empowering enterprise workflow automation with simplicity and control.*
