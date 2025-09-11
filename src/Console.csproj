@@ -21,7 +21,7 @@
 	
 	<ItemGroup>
 		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-		<PackageReference Include="FlowSynx.Client.AspNetCore" Version="1.3.6" />
+		<PackageReference Include="FlowSynx.Client.AspNetCore" Version="1.3.7" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.7" />
