@@ -1,7 +1,129 @@
 ﻿@page "/"
+@using FlowSynx.Client.Messages.Responses.Metrics.Query
+
 @attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+@inject IFlowSynxClient FlowSynxClient
+@inject ISnackbar SnackBar
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Workflow Dashboard</PageTitle>
 
-<h1>Welcome to FlowSynx Console</h1>
-Web-based management console for orchestrating, executing, and monitoring workflows via the FlowSynx Workflow Automation API.
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <!-- Header -->
+    <MudStack Spacing="2" Class="mb-6">
+        <MudText Typo="Typo.h4" Class="fw-bold">Workflow Management Dashboard</MudText>
+    </MudStack>
+
+    <!-- Top Stats -->
+    <MudGrid GutterSize="3">
+        @foreach (var stat in Stats)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-3 d-flex flex-column align-center elevation-6 stat-card">
+                    <MudIcon Icon="@stat.Icon" Size="Size.Large" Color="@stat.IconColor" Class="mb-2" />
+                    <MudText Typo="Typo.subtitle1" Class="mb-1">@stat.Label</MudText>
+                    <MudText Typo="Typo.h4" Color="@stat.ValueColor" Class="fw-bold">@stat.Value</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private SummaryResponse SummaryResponse = new();
+
+    private List<StatCard> Stats => new()
+    {
+        new StatCard
+        {
+            Label = "Active Workflows",
+            Value = SummaryResponse.ActiveWorkflows,
+            Icon = Icons.Material.Filled.PlayCircle,
+            IconColor = Color.Default,
+            ValueColor = Color.Default
+        },
+        new StatCard
+        {
+            Label = "Running Tasks",
+            Value = SummaryResponse.RunningTasks,
+            Icon = Icons.Material.Filled.Autorenew,
+            IconColor = Color.Default,
+            ValueColor = Color.Default
+        },
+        new StatCard
+        {
+            Label = "Completed Today",
+            Value = SummaryResponse.CompletedToday,
+            Icon = Icons.Material.Filled.CheckCircle,
+            IconColor = Color.Default,
+            ValueColor = Color.Default
+        },
+        new StatCard
+        {
+            Label = "Failed Workflows",
+            Value = SummaryResponse.FailedWorkflows,
+            Icon = Icons.Material.Filled.Error,
+            IconColor = Color.Default,
+            ValueColor = Color.Default
+        }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        SummaryResponse = await LoadData(CancellationToken.None);
+    }
+
+    private async Task<SummaryResponse> LoadData(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var token = string.Empty;
+            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessTokenResult))
+                token = "No token available or user not authenticated.";
+            else
+                token = accessTokenResult;
+
+            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
+            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var result = await FlowSynxClient.Metrics.GetWorkflowSummary(cancellationToken);
+
+            if (result.StatusCode != 200)
+            {
+                SnackBar.Add("Failed to load plugins: Bad response code.", Severity.Error);
+                return new SummaryResponse();
+            }
+
+            if (!result.Payload.Succeeded)
+            {
+                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
+                SnackBar.Add($"Plugin error:\n{errorMessage}", Severity.Error);
+                return new SummaryResponse();
+            }
+
+            var summaryResult = result.Payload.Data;
+            return new SummaryResponse
+            {
+                ActiveWorkflows = summaryResult.ActiveWorkflows,
+                CompletedToday = summaryResult.CompletedToday,
+                FailedWorkflows = summaryResult.FailedWorkflows,
+                RunningTasks = summaryResult.RunningTasks
+            };
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            return new SummaryResponse();
+        }
+    }
+
+    private class StatCard
+    {
+        public string Label { get; set; }
+        public int Value { get; set; }
+        public string Icon { get; set; }
+        public Color IconColor { get; set; }
+        public Color ValueColor { get; set; }
+    }
+}
