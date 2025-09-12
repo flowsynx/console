@@ -30,7 +30,7 @@ public class WorkflowService: IWorkflowService
     {
         var wf = new Workflow
         {
-            Name = "sample-flowsynx-workflow-process-2",
+            Name = Guid.NewGuid().ToString(),
             Description = "This is a sample flowsynx workflow",
             Configuration = new WorkflowConfiguration { DegreeOfParallelism = 5, Timeout = 1000000, ErrorHandling = new ErrorHandling { Strategy = "abort" } }
         };
@@ -44,7 +44,6 @@ public class WorkflowService: IWorkflowService
                     { "ShowWindow", false },
                     { "FailOnNonZeroExit", true }
                 },
-            ManualApproval = new ManualApproval { Enabled = true, Approvers = new List<string> { "admin@example.com", "manager@example.com" }, Instructions = "Please review the SQL query result and approve before continuing.", DefaultAction = "abort" },
             ErrorHandling = new ErrorHandling { Strategy = "abort", RetryPolicy = new RetryPolicy { MaxRetries = 3, BackoffStrategy = "Fixed", InitialDelay = 1000, MaxDelay = 100 } },
             Timeout = 1000000,
             Position = new(80, 100),
