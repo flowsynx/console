@@ -38,6 +38,8 @@ public class WorkflowTask
     public List<string> Dependencies { get; set; } = new();
     public string? Output { get; set; } = string.Empty;
     public WorkflowTaskPosition? Position { get; set; } = new(0, 0);
+
+    [JsonIgnore]
     public string? Status { get; set; }
 }
 
