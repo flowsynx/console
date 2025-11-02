@@ -1,4 +1,7 @@
-# FlowSynx Console
+<div align="center">
+  <h1>FlowSynx Console</h1>
+  <p><i>Web-based management console for FlowSynx Workflow Automation</i></p>
+</div>
 
 **FlowSynx Console** is a modern, web-based management console for
 orchestrating, executing, and monitoring workflows via the **FlowSynx
@@ -11,7 +14,7 @@ business analysts, operations teams, and even less-exprience users
 who need a secure, intuitive,and centralized platform to manage automation 
 workflows, plugins,runtime execution, and monitoring in distributed environments.
 
-------------------------------------------------------------------------
+![FlowSynx Console Screenshot](/img/console.jpg)
 
 ## Key Capabilities
 
