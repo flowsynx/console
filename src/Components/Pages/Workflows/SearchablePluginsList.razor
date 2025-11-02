@@ -91,7 +91,12 @@
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
 
-            var result = await FlowSynxClient.Plugins.ListAsync(cancellationToken);
+            var request = new FlowSynx.Client.Messages.Requests.Plugins.PluginsListRequest
+            {
+                Page = 1,
+                PageSize = int.MaxValue
+            };
+            var result = await FlowSynxClient.Plugins.ListAsync(request, cancellationToken);
 
             if (result.StatusCode != 200)
             {

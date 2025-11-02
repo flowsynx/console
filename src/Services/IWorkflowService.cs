@@ -4,9 +4,9 @@ namespace Console.Services;
 
 public interface IWorkflowService
 {
-    Workflow Get();
-    void Set(Workflow wf);
+    WorkflowContainer Get();
+    void Set(WorkflowContainer wf);
     string GetJson();
     void SetJson(string json);
-    Workflow GetSample();
+    WorkflowContainer GetSample();
 }

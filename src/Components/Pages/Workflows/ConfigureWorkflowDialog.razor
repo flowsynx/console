@@ -19,6 +19,14 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12" sm="12">
+                <MudTextField T="string" For="@(() => Config.Schema)"
+                              @bind-Value="Config.Schema"
+                              Label="Workflow Schema"
+                              Variant="Variant.Text"
+                              Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="12" sm="12">
                 <MudTextField T="string" For="@(() => Config.Name)"
                               @bind-Value="Config.Name"
                               Label="Workflow name"

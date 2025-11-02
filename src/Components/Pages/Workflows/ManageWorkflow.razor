@@ -92,7 +92,7 @@
     public Guid id { get; set; }
 
     private bool IsProcessing = false;
-    private Workflow Workflow { get; set; } = new Workflow();
+    private WorkflowContainer WorkflowContainer { get; set; } = new WorkflowContainer();
     private string? _workflowJson;
     private UpdateWorkflowRequest UpdateWorkflowRequest = new UpdateWorkflowRequest
             {
@@ -136,8 +136,16 @@
             }
 
             _workflowJson = payload.Data.Workflow;
+
+            // var workflowContainer = new WorkflowContainer
+            //     {
+            //         Schema = payload.Data.sc,
+            //         Workflow = payload.Data.Workflow
+            //     };
+
+
             WorkflowService.SetJson(_workflowJson);
-            Workflow = WorkflowService.Get();
+            WorkflowContainer = WorkflowService.Get();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -162,8 +170,8 @@
     {
         View.Code => @<WorkflowJsonEditor JsonContent="@_workflowJson"
                     JsonContentChanged="v => _workflowJson = v" />,
-        View.Designer => Workflow is not null && Workflow.Tasks?.Any() == true
-                ? @<WorkflowDesigner Workflow="@Workflow" />
+        View.Designer => WorkflowContainer is not null && WorkflowContainer.Workflow.Tasks?.Any() == true
+                ? @<WorkflowDesigner WorkflowContainer="@WorkflowContainer" />
                 : @<MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />,
         _ => @<p>Unknown view</p>
     };
@@ -262,9 +270,9 @@
             {
                 "Config", new WorkflowViewModel
                 {
-                    Name = Workflow.Name,
-                    Description = Workflow.Description,
-                    Configuration = Workflow.Configuration
+                    Name = WorkflowContainer.Workflow.Name,
+                    Description = WorkflowContainer.Workflow.Description,
+                    Configuration = WorkflowContainer.Workflow.Configuration
                 }
             }
         };
@@ -274,9 +282,9 @@
         if (dialogResult != null && !dialogResult.Canceled)
         {
             var result = (WorkflowViewModel)dialogResult.Data;
-            Workflow.Name = result.Name;
-            Workflow.Description = result.Description;
-            Workflow.Configuration = result.Configuration;
+            WorkflowContainer.Workflow.Name = result.Name;
+            WorkflowContainer.Workflow.Description = result.Description;
+            WorkflowContainer.Workflow.Configuration = result.Configuration;
         }
     }
 
@@ -293,8 +301,8 @@
 
         var parameters = new DialogParameters {
             { "Id", id },
-            { "WorkflowName", Workflow.Name },
-            { "WorkflowDescription", Workflow.Description }
+            { "WorkflowName", WorkflowContainer.Workflow.Name },
+            { "WorkflowDescription", WorkflowContainer.Workflow.Description }
         };
 
         var dialog = await DialogService.ShowAsync<DeleteWorkflowDialog>("Delete workflow", parameters, options);

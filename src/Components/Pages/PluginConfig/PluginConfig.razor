@@ -87,7 +87,14 @@
 
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
-            var result = await FlowSynxClient.PluginConfig.ListAsync(cancellationToken);
+
+            var request = new FlowSynx.Client.Messages.Requests.PluginConfig.PluginConfigListRequest
+            {
+                Page = state.Page + 1,
+                PageSize = state.PageSize
+            };
+
+            var result = await FlowSynxClient.PluginConfig.ListAsync(request, cancellationToken);
 
             if (result.StatusCode != 200)
             {
@@ -103,11 +110,12 @@
             }
 
             var pluginconfigs = result.Payload.Data.ToList();
+            var totalCount = result.Payload.Pagination.TotalCount;
 
             return new TableData<PluginConfigListResponse>
                 {
                     Items = pluginconfigs,
-                    TotalItems = pluginconfigs.Count
+                    TotalItems = totalCount
                 };
         }
         catch (Exception ex)

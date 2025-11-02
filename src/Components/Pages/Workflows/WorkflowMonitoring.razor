@@ -49,7 +49,7 @@
     public Guid WorkflowExecutionId { get; set; } = Guid.Empty;
 
     [Parameter]
-    public Workflow Workflow { get; set; }
+    public WorkflowContainer WorkflowContainer { get; set; }
 
     private bool IsProcessing = false;
     private bool _canvasInitialized = false;
@@ -108,7 +108,7 @@
         _hubConnection?.Remove(eventId);
         _hubConnection?.On<WorkflowTaskExecutionUpdateDto>(eventId, async (update) =>
         {
-            var task = Workflow.Tasks.FirstOrDefault(x => x.Name == update.TaskName);
+            var task = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.Name == update.TaskName);
             if (task != null && !string.IsNullOrEmpty(task.NodeId))
             {
                 await JSRuntime.InvokeVoidAsync("fsDrawflow.setNodeStatus", task.NodeId, update.Status.ToLower());
@@ -171,7 +171,7 @@
             {
                 foreach (var execTask in payload.Data)
                 {
-                    var task = Workflow.Tasks.FirstOrDefault(t => t.Name == execTask.Name);
+                    var task = WorkflowContainer.Workflow.Tasks.FirstOrDefault(t => t.Name == execTask.Name);
                     if (task != null)
                         task.Status = execTask.Status;
                 }
@@ -196,7 +196,7 @@
     {
         await JSRuntime.InvokeVoidAsync("fsDrawflow.clear");
 
-        foreach (var t in Workflow.Tasks)
+        foreach (var t in WorkflowContainer.Workflow.Tasks)
         {
             var data = new { name = t.Name, type = t.Type, parameters = t.Parameters };
 
@@ -214,11 +214,11 @@
             await JSRuntime.InvokeVoidAsync("fsDrawflow.setNodeStatus", t.NodeId, status);
         }
 
-        foreach (var t in Workflow.Tasks)
+        foreach (var t in WorkflowContainer.Workflow.Tasks)
         {
             foreach (var dep in t.Dependencies)
             {
-                var from = Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
+                var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
                 if (from != null)
                     await JSRuntime.InvokeVoidAsync("fsDrawflow.connect", from.NodeId, t.NodeId);
             }
@@ -229,7 +229,7 @@
     [JSInvokable]
     public Task OnNodeSelected(string id)
     {
-        SelectedTask = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        SelectedTask = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -241,7 +241,7 @@
     [JSInvokable]
     public Task OnNodeDoubleClicked(string id)
     {
-        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        var task = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
         if (task != null)
         {
             SelectedTask = task;
@@ -252,7 +252,7 @@
     [JSInvokable]
     public Task OnNodeProperties(string id)
     {
-        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        var task = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
         if (task != null)
         {
             SelectedTask = task;

@@ -4,15 +4,23 @@ namespace Console.Services;
 
 public class WorkflowViewModel
 {
+    public string? Schema { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public WorkflowConfiguration Configuration { get; set; } = new();
 }
 
-public class Workflow
+public class WorkflowContainer
+{
+    public string? Schema { get; set; } = "https://schema.flowsynx.io/workflows/v1.1.0/schema.json";
+    public WorkflowDefinition Workflow { get; set; } = new();
+}
+
+public class WorkflowDefinition
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public Dictionary<string, object?>? Variables { get; set; } = new();
     public WorkflowConfiguration Configuration { get; set; } = new();
     public List<WorkflowTask> Tasks { get; set; } = new();
 }

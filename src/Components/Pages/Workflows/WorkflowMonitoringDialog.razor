@@ -17,7 +17,7 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <WorkflowMonitoring Workflow="@Workflow" WorkflowId="@WorkflowId" WorkflowExecutionId="@WorkflowExecutionId" />
+        <WorkflowMonitoring WorkflowContainer="@WorkflowContainer" WorkflowId="@WorkflowId" WorkflowExecutionId="@WorkflowExecutionId" />
     </DialogContent>
 </MudDialog>
 
@@ -32,7 +32,7 @@
     public Guid WorkflowExecutionId { get; set; } = Guid.Empty;
 
     private bool IsProcessing = false;
-    private Workflow Workflow => WorkflowService.Get();
+    private WorkflowContainer WorkflowContainer => WorkflowService.Get();
     private string? _workflowJson;
 
     protected override async Task OnInitializedAsync()

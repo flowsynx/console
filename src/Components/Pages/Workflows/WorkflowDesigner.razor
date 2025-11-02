@@ -51,7 +51,7 @@
 </div>
 
 @code {
-    [Parameter] public Workflow Workflow { get; set; }
+    [Parameter] public WorkflowContainer WorkflowContainer { get; set; }
 
     private WorkflowTask SelectedTask;
     private string _deps;
@@ -84,7 +84,7 @@
     {
         await JSRuntime.InvokeVoidAsync("fsDrawflow.clear");
 
-        foreach (var task in Workflow.Tasks)
+        foreach (var task in WorkflowContainer.Workflow.Tasks)
         {
             string displayType;
 
@@ -139,11 +139,11 @@
             task.NodeId = id.ToString();
         }
 
-        foreach (var t in Workflow.Tasks)
+        foreach (var t in WorkflowContainer.Workflow.Tasks)
         {
             foreach (var dep in t.Dependencies)
             {
-                var from = Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
+                var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
                 if (from != null)
                     await JSRuntime.InvokeVoidAsync("fsDrawflow.connect", from.NodeId, t.NodeId);
             }
@@ -163,15 +163,15 @@
 
         var newTask = new WorkflowTask
             {
-                Name = $"{plugin.type}-{Workflow.Tasks.Count + 1}",
+            Name = $"{plugin.type}-{WorkflowContainer.Workflow.Tasks.Count + 1}",
                 Type = typeValue,
                 Position = new(
-                    120 + (Workflow.Tasks.Count % 5) * 140,
-                    120 + (Workflow.Tasks.Count / 5) * 120
+                    120 + (WorkflowContainer.Workflow.Tasks.Count % 5) * 140,
+                    120 + (WorkflowContainer.Workflow.Tasks.Count / 5) * 120
                 )
             };
 
-        Workflow.Tasks.Add(newTask);
+        WorkflowContainer.Workflow.Tasks.Add(newTask);
 
         string displayType = plugin.type == "LocalFileSystem"
             ? ""
@@ -240,7 +240,7 @@
     [JSInvokable]
     public Task OnNodeSelected(string id)
     {
-        SelectedTask = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        SelectedTask = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
         _deps = SelectedTask != null ? string.Join(',', SelectedTask.Dependencies) : string.Empty;
         StateHasChanged();
         return Task.CompletedTask;
@@ -252,8 +252,8 @@
     [JSInvokable]
     public Task OnConnectionCreated(string fromId, string toId)
     {
-        var from = Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
-        var to = Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
+        var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
+        var to = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
         if (from != null && to != null && !to.Dependencies.Contains(from.Name))
             to.Dependencies.Add(from.Name);
         _deps = SelectedTask == to ? string.Join(',', to.Dependencies) : _deps;
@@ -264,8 +264,8 @@
     [JSInvokable]
     public Task OnConnectionRemoved(string fromId, string toId)
     {
-        var from = Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
-        var to = Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
+        var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
+        var to = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
         to?.Dependencies.Remove(from?.Name);
         _deps = SelectedTask == to ? string.Join(',', to.Dependencies) : _deps;
         StateHasChanged();
@@ -275,11 +275,11 @@
     [JSInvokable]
     public Task OnNodeRemoved(string id)
     {
-        var t = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        var t = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
         if (t != null)
         {
-            Workflow.Tasks.Remove(t);
-            foreach (var o in Workflow.Tasks) o.Dependencies.Remove(t.Name);
+            WorkflowContainer.Workflow.Tasks.Remove(t);
+            foreach (var o in WorkflowContainer.Workflow.Tasks) o.Dependencies.Remove(t.Name);
             if (SelectedTask == t) { SelectedTask = null; _deps = string.Empty; }
         }
         StateHasChanged();
@@ -289,7 +289,7 @@
     [JSInvokable]
     public Task OnNodeDoubleClicked(string id)
     {
-        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        var task = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
         if (task != null)
         {
             SelectedTask = task;
@@ -301,7 +301,7 @@
     [JSInvokable]
     public Task OnNodeProperties(string id)
     {
-        var task = Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
+        var task = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
         if (task != null)
         {
             SelectedTask = task;
@@ -313,7 +313,7 @@
     [JSInvokable]
     public Task OnNodeMoved(string id, double? x, double? y)
     {
-        var task = Workflow.Tasks.FirstOrDefault(t => t.NodeId == id);
+        var task = WorkflowContainer.Workflow.Tasks.FirstOrDefault(t => t.NodeId == id);
         if (task != null && x.HasValue && y.HasValue)
         {
             task.Position = new((int)x.Value, (int)y.Value);

@@ -55,7 +55,7 @@
 
 @code {
     private bool IsProcessing = false;
-    private Workflow Workflow => WorkflowService.Get();
+    private WorkflowContainer WorkflowContainer => WorkflowService.Get();
     private string? _workflowJson;
     private AddWorkflowRequest AddWorkflowRequest = new AddWorkflowRequest { Definition = "" };
 
@@ -70,7 +70,7 @@
     {
         View.Code => @<WorkflowJsonEditor JsonContent="@_workflowJson"
                     JsonContentChanged="v => _workflowJson = v" />,
-        View.Designer => @<WorkflowDesigner Workflow="@Workflow" />,
+        View.Designer => @<WorkflowDesigner WorkflowContainer="@WorkflowContainer" />,
         _ => @<p>Unknown view</p>
     };
 
@@ -79,7 +79,7 @@
         CurrentView = CurrentView == View.Code ? View.Designer : View.Code;
         if (CurrentView == View.Code)
         {
-            WorkflowService.Set(Workflow);
+            WorkflowService.Set(WorkflowContainer);
             _workflowJson = WorkflowService.GetJson();
         }
         else
@@ -169,9 +169,10 @@
             { 
                 "Config", new WorkflowViewModel 
                 { 
-                    Name = Workflow.Name, 
-                    Description = Workflow.Description, 
-                    Configuration = Workflow.Configuration 
+                    Schema = WorkflowContainer.Schema,
+                    Name = WorkflowContainer.Workflow.Name,
+                    Description = WorkflowContainer.Workflow.Description,
+                    Configuration = WorkflowContainer.Workflow.Configuration
                 } 
             }
         };
@@ -181,9 +182,10 @@
         if (dialogResult != null && !dialogResult.Canceled)
         {
             var result = (WorkflowViewModel)dialogResult.Data;
-            Workflow.Name = result.Name;
-            Workflow.Description = result.Description;
-            Workflow.Configuration = result.Configuration;
+            WorkflowContainer.Schema = result.Schema;
+            WorkflowContainer.Workflow.Name = result.Name;
+            WorkflowContainer.Workflow.Description = result.Description;
+            WorkflowContainer.Workflow.Configuration = result.Configuration;
         }
     }
 
