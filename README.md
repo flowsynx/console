@@ -65,8 +65,6 @@ workflows, plugins,runtime execution, and monitoring in distributed environments
 -   Dark and light themes for operator comfort.
 -   Rich dialog-driven interactions for workflows, plugins, and configuration wizards.
 
-------------------------------------------------------------------------
-
 ## Architecture Overview
 
 The FlowSynx Console is a **client-side Blazor WebAssembly application**
@@ -84,8 +82,6 @@ designed for scalability, security, and extensibility.
     -   Self-hosted or containerized deployment (Docker/Kubernetes)
     -   Reverse proxy support (Nginx, Apache, Traefik, Azure App Gateway)
     -   TLS/HTTPS enforced by default
-
-------------------------------------------------------------------------
 
 ## Getting Started
 
@@ -126,8 +122,6 @@ designed for scalability, security, and extensibility.
 
         https://localhost:6264
 
-------------------------------------------------------------------------
-
 ## Configuration
 
 ### Authentication
@@ -145,8 +139,6 @@ designed for scalability, security, and extensibility.
     }
     ```
 
-------------------------------------------------------------------------
-
 ## Deployment
 
 -   **Docker**: Prebuilt container images available via GitHub Packages or Docker Hub.
@@ -154,16 +146,12 @@ designed for scalability, security, and extensibility.
 -   **CI/CD Integration**: Ready-to-use pipelines for GitHub Actions, GitLab CI, or Azure DevOps.
 -   **Cloud-Native Support**: Deployable to AWS ECS/EKS, Azure AKS, or Google GKE.
 
-------------------------------------------------------------------------
-
 ## Contributing
 
 We welcome community contributions!
 - Submit issues or feature requests via [GitHub Issues](https://github.com/flowsynx/console/issues).
 - Open pull requests with clear documentation and test coverage.
 - Adhere to coding standards and best practices outlined in our [Contribution Guidelines](https://github.com/flowsynx/console/blob/master/CONTRIBUTING.md).
-
-------------------------------------------------------------------------
 
 ## Roadmap
 
@@ -173,14 +161,10 @@ Planned enhancements include:
 - **Workflow versioning and rollback** capabilities.
 - **Drag-and-drop workflow designer** integrated into the console.
 
-------------------------------------------------------------------------
-
 ## License
 
 © FlowSynx. All rights reserved.
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
-
-------------------------------------------------------------------------
 
 ## Support & Documentation
 
