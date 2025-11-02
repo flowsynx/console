@@ -14,7 +14,7 @@ business analysts, operations teams, and even less-exprience users
 who need a secure, intuitive,and centralized platform to manage automation 
 workflows, plugins,runtime execution, and monitoring in distributed environments.
 
-![FlowSynx Console Screenshot](/img/console.jpg)
+![FlowSynx Console Screenshot](/img/console.png)
 
 ## Key Capabilities
 
