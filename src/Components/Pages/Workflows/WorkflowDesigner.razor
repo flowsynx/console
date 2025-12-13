@@ -86,41 +86,11 @@
 
         foreach (var task in WorkflowContainer.Workflow.Tasks)
         {
-            string displayType;
-
-            if (task.Type is JsonElement json)
-            {
-                if (json.ValueKind == JsonValueKind.String)
-                {
-                    displayType = json.GetString() ?? "";
-                }
-                else if (json.ValueKind == JsonValueKind.Object)
-                {
-                    string? plugin = json.TryGetProperty("Plugin", out var pluginProp) ? pluginProp.GetString() : null;
-                    string? version = json.TryGetProperty("Version", out var versionProp) ? versionProp.GetString() : null;
-
-                    displayType = !string.IsNullOrWhiteSpace(plugin) && !string.IsNullOrWhiteSpace(version)
-                        ? $"{plugin} ({version})"
-                        : plugin ?? "Unknown";
-                }
-                else
-                {
-                    displayType = "Unknown";
-                }
-            }
-            else if (task.Type != null)
-            {
-                var pluginProp = task.Type.GetType().GetProperty("Plugin")?.GetValue(task.Type)?.ToString();
-                var versionProp = task.Type.GetType().GetProperty("Version")?.GetValue(task.Type)?.ToString();
-
-                displayType = !string.IsNullOrWhiteSpace(pluginProp) && !string.IsNullOrWhiteSpace(versionProp)
-                    ? $"{pluginProp} ({versionProp})"
-                    : pluginProp ?? "Unknown";
-            }
-            else
-            {
-                displayType = "Unknown";
-            }
+            var pluginType = task.Type ?? "Unknown";
+            var parts = pluginType.Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var displayType = parts.Length == 2
+                ? $"{parts[0]} ({parts[1]})"
+                : pluginType; // fallback to the original string
 
             var data = new
             {
@@ -150,37 +120,28 @@
         }
     }
 
-    private async Task AddNodeTemplate((string type, string version) plugin)
+    private async Task AddNodeTemplate(string type)
     {
-        var typeValue = plugin.type == "LocalFileSystem"
-            ? (object)""
-            : new
-            {
-                Plugin = plugin.type,
-                Version = plugin.version,
-                Specifications = new Dictionary<string, string>()
-            };
-
         var newTask = new WorkflowTask
+        {
+            Name = $"{type}-{WorkflowContainer.Workflow.Tasks.Count + 1}",
+            Type = type,
+            Execution = new ExecutionConfig
             {
-            Name = $"{plugin.type}-{WorkflowContainer.Workflow.Tasks.Count + 1}",
-                Type = typeValue,
-                Position = new(
-                    120 + (WorkflowContainer.Workflow.Tasks.Count % 5) * 140,
-                    120 + (WorkflowContainer.Workflow.Tasks.Count / 5) * 120
-                )
-            };
+                Specification = new Dictionary<string, object?>()
+            },
+            Position = new(
+                120 + (WorkflowContainer.Workflow.Tasks.Count % 5) * 140,
+                120 + (WorkflowContainer.Workflow.Tasks.Count / 5) * 120
+            )
+        };
 
         WorkflowContainer.Workflow.Tasks.Add(newTask);
-
-        string displayType = plugin.type == "LocalFileSystem"
-            ? ""
-            : $"{plugin.type} ({plugin.version})";
 
         var data = new
         {
             name = newTask.Name,
-            type = displayType,
+            type = type,
             parameters = newTask.Execution.Parameters
         };
 
@@ -208,7 +169,7 @@
     }
 
     private Task UpdateNodeTitle() =>
-        SelectedTask != null ? JSRuntime.InvokeVoidAsync("fsDrawflow.updateNodeTitle", SelectedTask.NodeId, SelectedTask.Name, SelectedTask.Type ?? "LocalFileSystem").AsTask() : Task.CompletedTask;
+        SelectedTask != null ? JSRuntime.InvokeVoidAsync("fsDrawflow.updateNodeTitle", SelectedTask.NodeId, SelectedTask.Name, SelectedTask.Type).AsTask() : Task.CompletedTask;
 
     private async void ShowPropertiesDialog(WorkflowTask task)
     {

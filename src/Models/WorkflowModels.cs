@@ -38,7 +38,7 @@ public class WorkflowTask
     public string NodeId { get; set; }
     public required string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public object? Type { get; set; }
+    public string? Type { get; set; }
     public ExecutionConfig Execution { get; init; } = new();
     public FlowControlConfig FlowControl { get; init; } = new();
     public ErrorHandling? ErrorHandling { get; set; }

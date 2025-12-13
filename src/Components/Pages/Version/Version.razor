@@ -6,7 +6,12 @@
 
 <PageTitle>FlowSynx Version</PageTitle>
 
-<HeaderTitle Title="Version" Description="Details about the currently deployed version of the FlowSynx system" />
+<HeaderTitle 
+    Title="Version" 
+    Description="Details about the currently deployed version of the FlowSynx system"
+    Icon="@Icons.Material.Filled.Info"
+    IconColor="Color.Primary"
+    IconSize="Size.Large" />
 
 <MudTable T="VersionResponse" ServerData="LoadData" Dense="true" Hover="true" Bordered="false" Striped="false" @ref="_table" LoadingProgressColor="Color.Primary">
     <HeaderContent>

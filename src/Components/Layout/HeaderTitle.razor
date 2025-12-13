@@ -1,14 +1,42 @@
-﻿<MudText Typo="Typo.h5" Color="Color.Default" Class="@CombineClass("mb-0")">
-    @Title
-</MudText>
-<MudText Typo="Typo.subtitle2" Class="@CombineClass("mb-5 gray-subtitle")">
-    @Description
-</MudText>
+﻿@using MudBlazor
+
+<MudStack Row="true"
+          Spacing="2"
+          AlignItems="AlignItems.Baseline"
+          Class="@CombineClass("mb-6")">
+
+    @if (!string.IsNullOrWhiteSpace(Icon))
+    {
+        <MudAvatar Size="Size.Medium"
+                   Color="@IconColor"
+                   Variant="Variant.Filled">
+            <MudIcon Icon="@Icon" />
+        </MudAvatar>
+    }
+
+    <MudStack Direction="Column" Spacing="1" AlignItems="AlignItems.Baseline">
+        <MudText Typo="Typo.h5" Class="font-weight-medium">
+            @Title
+        </MudText>
+
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <MudText Typo="Typo.body2" Class="gray-subtitle">
+                @Description
+            </MudText>
+        }
+    </MudStack>
+</MudStack>
 
 @code {
     [Parameter] public required string Title { get; set; }
     [Parameter] public string? Description { get; set; }
     [Parameter] public string? Class { get; set; }
+
+    // Optional icon parameters
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public Color IconColor { get; set; } = Color.Default;
+    [Parameter] public Size IconSize { get; set; } = Size.Medium;
 
     private string CombineClass(string defaultClass)
     {

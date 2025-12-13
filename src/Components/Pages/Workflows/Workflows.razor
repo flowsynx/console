@@ -13,7 +13,12 @@
 
 <PageTitle>FlowSynx Workflows</PageTitle>
 
-<HeaderTitle Title="Workflows" Description="Create and manage workflows to streamline processes, connect tasks, and ensure reliable execution" />
+<HeaderTitle 
+    Title="Workflows"
+    Description="Create and manage workflows to streamline processes, connect tasks, and ensure reliable execution"
+    Icon="@Icons.Material.Filled.ListAlt"
+    IconColor="Color.Primary"
+    IconSize="Size.Large" />
 
 <MudTable T="WorkflowListResponse"
           ServerData="LoadData"
@@ -24,7 +29,7 @@
           OnRowClick="ManageWorkflow"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
-        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
+        <MudButton DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="@Size.Small"
                    StartIcon="@Icons.Material.Filled.Add" class="mr-1" OnClick="AddWorkflow">Add workflow</MudButton>
         <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
                    StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>

@@ -44,8 +44,9 @@
                     <MudList T="object" Dense="true">
                         @foreach (var version in item.Versions)
                         {
+                            var pluginType = $"{item.Type}:{version}";
                             <MudListItem T="object"
-                                         OnClick="@(() => OnItemClick.InvokeAsync((item.Type, version)))">
+                                         OnClick="@(() => OnItemClick.InvokeAsync(pluginType))">
                                 <MudText Typo="Typo.body2">Version: @version</MudText>
                             </MudListItem>
                         }
@@ -57,7 +58,7 @@
 </MudExpansionPanels>
 
 @code {
-    [Parameter] public EventCallback<(string Type, string Version)> OnItemClick { get; set; }
+    [Parameter] public EventCallback<string> OnItemClick { get; set; }
 
     private List<PluginTypeInfo> Items { get; set; } = new();
     private string _search = string.Empty;
@@ -65,7 +66,6 @@
     protected override async Task OnInitializedAsync()
     {
         Items = await LoadPluginTypes(CancellationToken.None);
-        Items.Insert(0, new PluginTypeInfo { Type = "LocalFileSystem", Versions = new List<string>() });
     }
 
     private List<PluginTypeInfo> FilteredItems =>
@@ -136,11 +136,12 @@
         if (plugin.Versions.Any())
         {
             var latest = plugin.Versions.First(); // versions are sorted descending
-            OnItemClick.InvokeAsync((plugin.Type, latest));
+            var pluginType = $"{plugin.Type}:{latest}";
+            OnItemClick.InvokeAsync(pluginType);
         }
         else
         {
-            OnItemClick.InvokeAsync((plugin.Type, string.Empty));
+            OnItemClick.InvokeAsync($"{plugin.Type}:latest");
         }
     }
 

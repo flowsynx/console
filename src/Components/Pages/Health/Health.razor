@@ -10,36 +10,78 @@
 
 <PageTitle>FlowSynx HealthCheck</PageTitle>
 
-<HeaderTitle Title="Health Check" Description="Checking the Health of the FlowSynx System and Its Components" />
+<HeaderTitle 
+    Title="Health Check" 
+    Description="Checking the Health of the FlowSynx System and Its Components"
+    Icon="@Icons.Material.Filled.MonitorHeart"
+    IconColor="Color.Primary"
+    IconSize="Size.Large" />
 
-<MudTable 
-    T="IndividualHealthCheckResponse" 
-    ServerData="LoadData" 
-    Dense="true" 
-    Hover="true" 
-    Bordered="false" 
-    Striped="false" 
-    @ref="_table" LoadingProgressColor="Color.Primary">
-    <HeaderContent>
-        <MudTh>Component</MudTh>
-        <MudTh>Description</MudTh>
-        <MudTh>Status</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Component"><b>@context.Component</b></MudTd>
-        <MudTd DataLabel="Description">@context.Description</MudTd>
-        <MudTd DataLabel="Status">@context.Status</MudTd>
-    </RowTemplate>
-    <NoRecordsContent>
-        <MudText>No matching records found</MudText>
-    </NoRecordsContent>
-    <LoadingContent>
-        <MudText>Loading...</MudText>
-    </LoadingContent>
-</MudTable>
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-0">
+    <MudCard Elevation="1">
+        <MudTable 
+            T="IndividualHealthCheckResponse" 
+            ServerData="LoadData" 
+            Dense="true" 
+            Hover="true" 
+            Bordered="false" 
+            Striped="false" 
+            @ref="_table" 
+            LoadingProgressColor="Color.Primary"
+            RowClassFunc="GetRowClass">
+            <ToolBarContent>
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Default" 
+                           OnClick="RefreshAsync" 
+                           StartIcon="@Icons.Material.Filled.Refresh" 
+                           Size="@Size.Small">Refresh</MudButton>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Component</MudTh>
+                <MudTh>Description</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Component">
+                    <MudStack Direction="Row" Spacing="1">
+                        <MudText Typo="Typo.body1"><b>@context.Component</b></MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Description">
+                    <MudText Typo="Typo.body2">@context.Description</MudText>
+                </MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled" Icon="@GetStatusIcon(context.Status)" Dense="true">
+                        @context.Status
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudEmptyState Icon="@Icons.Material.Outlined.SearchOff"
+                               Title="No matching records"
+                               Description="Try adjusting your search or refresh the data." />
+            </NoRecordsContent>
+            <LoadingContent>
+                <MudStack Direction="Row" Spacing="2" Class="pa-4">
+                    <MudProgressCircular Color="Color.Primary" />
+                    <MudText>Loading…</MudText>
+                </MudStack>
+            </LoadingContent>
+        </MudTable>
+    </MudCard>
+</MudContainer>
 
 @code {
     private MudTable<IndividualHealthCheckResponse>? _table;
+    private string? _search;
+    private int _healthyCount;
+    private int _degradedCount;
+    private int _unhealthyCount;
+
+    private async Task RefreshAsync()
+    {
+        await (_table?.ReloadServerData() ?? Task.CompletedTask);
+    }
 
     private async Task<TableData<IndividualHealthCheckResponse>> LoadData(
         TableState state, 
@@ -55,22 +97,78 @@
                 return new TableData<IndividualHealthCheckResponse> { Items = [], TotalItems = 0 };
             }
 
-            var plugins = result.Payload.HealthChecks;
+            var plugins = result.Payload.HealthChecks?.ToList() ?? [];
+
+            // Apply search filter (client-side) using table state or local search box
+            var searchTerm = !string.IsNullOrWhiteSpace(_search) ? _search : "";
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var s = searchTerm.Trim();
+                plugins = plugins.Where(p =>
+                    (p.Component?.Contains(s, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (p.Description?.Contains(s, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (p.Status?.Contains(s, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+            }
+
+            // Compute summary counts
+            _healthyCount = plugins.Count(p => EqualsIgnoreCase(p.Status, "Healthy") || EqualsIgnoreCase(p.Status, "Ok") || EqualsIgnoreCase(p.Status, "Pass"));
+            _degradedCount = plugins.Count(p => EqualsIgnoreCase(p.Status, "Degraded") || EqualsIgnoreCase(p.Status, "Warn") || EqualsIgnoreCase(p.Status, "Warning"));
+            _unhealthyCount = plugins.Count(p => EqualsIgnoreCase(p.Status, "Unhealthy") || EqualsIgnoreCase(p.Status, "Fail") || EqualsIgnoreCase(p.Status, "Error"));
 
             return new TableData<IndividualHealthCheckResponse>
-                {
-                    Items = plugins,
-                    TotalItems = plugins.Count()
-                };
+            {
+                Items = plugins,
+                TotalItems = plugins.Count
+            };
         }
         catch (Exception ex)
         {
             SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
+            _healthyCount = 0;
+            _degradedCount = 0;
+            _unhealthyCount = 0;
+
             return new TableData<IndividualHealthCheckResponse>
-                {
-                    Items = [],
-                    TotalItems = 0
-                };
+            {
+                Items = [],
+                TotalItems = 0
+            };
         }
     }
+
+    private static Color GetStatusColor(string? status)
+    {
+        if (status is null) return Color.Default;
+        return status.ToLowerInvariant() switch
+        {
+            "healthy" or "ok" or "pass" => Color.Success,
+            "degraded" or "warn" or "warning" => Color.Warning,
+            "unhealthy" or "fail" or "error" => Color.Error,
+            _ => Color.Info
+        };
+    }
+
+    private static string GetStatusIcon(string? status)
+    {
+        if (status is null) return Icons.Material.Outlined.Info;
+        return status.ToLowerInvariant() switch
+        {
+            "healthy" or "ok" or "pass" => Icons.Material.Filled.CheckCircle,
+            "degraded" or "warn" or "warning" => Icons.Material.Filled.Warning,
+            "unhealthy" or "fail" or "error" => Icons.Material.Filled.Error,
+            _ => Icons.Material.Outlined.Info
+        };
+    }
+
+    private static string GetRowClass(IndividualHealthCheckResponse item, int rowNumber)
+        => GetStatusColor(item.Status) switch
+        {
+            Color.Success => "row-success",
+            Color.Warning => "row-warning",
+            Color.Error => "row-error",
+            _ => string.Empty
+        };
+
+    private static bool EqualsIgnoreCase(string? a, string b)
+        => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 }
