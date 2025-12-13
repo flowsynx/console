@@ -166,8 +166,7 @@
             };
 
         var parameters = new DialogParameters {
-            { "PluginType", type },
-            { "PluginVersion", version }
+            { "PluginType", $"{type}:{version}" }
         };
 
         var dialog = await DialogService.ShowAsync<UninstallPluginDialog>("Uninstall plugin", parameters, options);
@@ -188,8 +187,7 @@
             };
 
         var parameters = new DialogParameters {
-            { "PluginType", type },
-            { "CurrentPluginVersion", currentVersion }
+            { "PluginType", $"{type}:{currentVersion}" }
         };
 
         var dialog = await DialogService.ShowAsync<UpdatePluginDialog>("Update plugin", parameters, options);

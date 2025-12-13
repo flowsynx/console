@@ -23,15 +23,6 @@
                               Margin="Margin.Dense"
                               HelperText="Enter the type of the plugin" />
             </MudItem>
-            <MudItem xs="12">
-                <MudTextField For="@(() => InstallPluginRequest.Version)"
-                              @bind-Value="InstallPluginRequest.Version"
-                              Label="Plugin version"
-                              Required="true"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
-                              HelperText="Enter the version of the plugin" />
-            </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
@@ -56,7 +47,7 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     private bool IsProcessing = false;
-    private InstallPluginRequest InstallPluginRequest = new() { Type = string.Empty, Version = string.Empty };
+    private InstallPluginRequest InstallPluginRequest = new() { Type = string.Empty };
 
     private void Cancel()
     {

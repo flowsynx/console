@@ -39,13 +39,13 @@
                 </MudItem>
                 <MudItem xs="12" md="12">
                     <MudText Typo="Typo.h6" Color="Color.Primary">Parameters</MudText>
-                    @if (SelectedTask.Parameters == null || SelectedTask.Parameters.Count <= 0)
+                    @if (SelectedTask.Execution.Parameters == null || SelectedTask.Execution.Parameters.Count <= 0)
                     {
                         <MudText>No parameters defined</MudText>
                     }
                     else
                     {
-                        @foreach (var kv in SelectedTask.Parameters.ToList())
+                        @foreach (var kv in SelectedTask.Execution.Parameters.ToList())
                         {
                             <MudGrid Class="mb-2">
                                 <MudItem xs="4">
@@ -120,7 +120,7 @@
 
     protected override void OnInitialized()
     {
-        dependencies = SelectedTask != null ? string.Join(',', SelectedTask.Dependencies) : string.Empty;
+        dependencies = SelectedTask != null ? string.Join(',', SelectedTask.FlowControl.Dependencies) : string.Empty;
     }
 
     private void Cancel()
@@ -129,21 +129,21 @@
     }
 
     private void UpdateDepsFromText() =>
-        SelectedTask.Dependencies = dependencies?.Split(',')
+        SelectedTask.FlowControl.Dependencies = dependencies?.Split(',')
             .Select(s => s.Trim())
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .ToList() ?? new();
 
-    private void SetParam(string key, string value) => SelectedTask.Parameters[key] = value;
+    private void SetParam(string key, string value) => SelectedTask.Execution.Parameters[key] = value;
 
-    private void RemoveParam(string key) => SelectedTask.Parameters.Remove(key);
+    private void RemoveParam(string key) => SelectedTask.Execution.Parameters.Remove(key);
 
     private void AddParam()
     {
         IsProcessing = true;
         if (!string.IsNullOrWhiteSpace(_newKey))
         {
-            SelectedTask.Parameters[_newKey] = _newValue;
+            SelectedTask.Execution.Parameters[_newKey] = _newValue;
             _newKey = _newValue = null;
         }
         IsProcessing = false;

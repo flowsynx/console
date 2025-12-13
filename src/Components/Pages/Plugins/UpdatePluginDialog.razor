@@ -15,8 +15,8 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField For="@(() => UpdatePluginRequest.Type)"
-                              @bind-Value="UpdatePluginRequest.Type"
+                <MudTextField For="@(() => UpdateModel.Type)"
+                              @bind-Value="UpdateModel.Type"
                               Label="Plugin type"
                               Variant="Variant.Text"
                               Margin="Margin.Dense"
@@ -24,22 +24,13 @@
                               Disabled="true" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField For="@(() => UpdatePluginRequest.OldVersion)"
-                              @bind-Value="UpdatePluginRequest.OldVersion"
-                              Label="Current version"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
-                              ReadOnly="true"
-                              Disabled="true" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField For="@(() => UpdatePluginRequest.NewVersion)"
-                              @bind-Value="UpdatePluginRequest.NewVersion"
-                              Label="New version"
+                <MudTextField For="@(() => UpdateModel.TargetVersion)"
+                              @bind-Value="UpdateModel.TargetVersion"
+                              Label="Target version"
                               Required="true"
                               Variant="Variant.Text"
                               Margin="Margin.Dense"
-                              HelperText="Enter the new version of the plugin" />
+                              HelperText="Enter the target version of the plugin" />
             </MudItem>
         </MudGrid>
     </DialogContent>
@@ -67,23 +58,19 @@
     [Parameter]
     public string PluginType { get; set; } = "";
 
-    [Parameter]
-    public string CurrentPluginVersion { get; set; } = "";
-
     private bool IsProcessing = false;
-    private UpdatePluginRequest UpdatePluginRequest = new() { 
+    private UpdatePluginModel UpdateModel = new()
+    {
         Type = string.Empty,
-            OldVersion = string.Empty,
-        NewVersion = string.Empty 
+        TargetVersion = string.Empty
     };
 
     override protected Task OnInitializedAsync()
     {
-        UpdatePluginRequest = new()
+        UpdateModel = new()
         {
             Type = PluginType,
-            OldVersion = CurrentPluginVersion,
-            NewVersion = string.Empty
+            TargetVersion = string.Empty
         };
         return Task.CompletedTask;
     }
@@ -121,7 +108,11 @@
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
 
-            var result = await FlowSynxClient.Plugins.UpdateAsync(UpdatePluginRequest);
+            var updatePluginRequest = new UpdatePluginRequest
+            {
+                Type = $"{UpdateModel.Type}->{UpdateModel.TargetVersion}"
+            };
+            var result = await FlowSynxClient.Plugins.UpdateAsync(updatePluginRequest);
             if (result.StatusCode != 200)
             {
                 SnackBar.Add("Server error while processing the request.", Severity.Error);
@@ -150,5 +141,11 @@
         {
             IsProcessing = false;
         }
+    }
+
+    private class UpdatePluginModel
+    {
+        public string Type { get; set; } = string.Empty;
+        public string TargetVersion { get; set; } = string.Empty;
     }
 }

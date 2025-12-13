@@ -16,8 +16,6 @@
             <strong>Are you sure you want to uninstall this plugin?</strong>
             <br /><br />
             <strong>Plugin type:</strong> @PluginType
-            <br />
-            <strong>Plugin version:</strong> @PluginVersion
             <br /><br />
             <MudCard Outlined="true" Class="pa-3 mx-auto">
                 <MudText Color="Color.Warning" Typo="Typo.subtitle2">
@@ -49,9 +47,6 @@
 
     [Parameter]
     public string PluginType { get; set; } = "";
-
-    [Parameter]
-    public string PluginVersion { get; set; } = "";
 
     private bool IsProcessing = false;
 
@@ -85,9 +80,9 @@
             var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
             FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
 
-            var unInstallPluginRequest = new UninstallPluginRequest() { 
-                Type = PluginType, 
-                Version = PluginVersion
+            var unInstallPluginRequest = new UninstallPluginRequest() 
+            { 
+                Type = PluginType
             };
             var result = await FlowSynxClient.Plugins.UninstallAsync(unInstallPluginRequest);
             if (result.StatusCode != 200)

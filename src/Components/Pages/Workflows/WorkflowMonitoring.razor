@@ -198,7 +198,7 @@
 
         foreach (var t in WorkflowContainer.Workflow.Tasks)
         {
-            var data = new { name = t.Name, type = t.Type, parameters = t.Parameters };
+            var data = new { name = t.Name, type = t.Type, parameters = t.Execution.Parameters };
 
             var id = await JSRuntime.InvokeAsync<int>(
                 "fsDrawflow.addNode",
@@ -216,7 +216,7 @@
 
         foreach (var t in WorkflowContainer.Workflow.Tasks)
         {
-            foreach (var dep in t.Dependencies)
+            foreach (var dep in t.FlowControl.Dependencies)
             {
                 var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
                 if (from != null)

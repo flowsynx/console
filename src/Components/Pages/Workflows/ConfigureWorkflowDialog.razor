@@ -1,6 +1,4 @@
-﻿@using FlowSynx.Client.Messages.Requests.PluginConfig
-@using FlowSynx.Client.Messages.Requests.Plugins
-@using FlowSynx.Client.Messages.Responses.PluginConfig
+﻿@using FlowSynx.Client.Messages.Requests.Plugins
 @using FlowSynx.Client.Messages.Responses.Plugins
 @using MudBlazor
 
@@ -45,8 +43,8 @@
             </MudItem>
 
             <MudItem xs="12" sm="6">
-                <MudNumericField T="int?" For="@(() => Config.Configuration.Timeout)"
-                                 @bind-Value="Config.Configuration.Timeout"
+                <MudNumericField T="int?" For="@(() => Config.Configuration.TimeoutMilliseconds)"
+                                 @bind-Value="Config.Configuration.TimeoutMilliseconds"
                                  Label="Timeout (ms)"
                                  Required="true"
                                  Variant="Variant.Text"
@@ -109,16 +107,16 @@
                             </MudItem>
 
                             <MudItem xs="12" sm="6">
-                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelay)"
-                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelay"
+                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelayMilliseconds)"
+                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelayMilliseconds"
                                                  Label="Initial Delay (ms)"
                                                  Variant="Variant.Text"
                                                  Margin="Margin.Dense" />
                             </MudItem>
 
                             <MudItem xs="12" sm="6">
-                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelay)"
-                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelay"
+                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelayMilliseconds)"
+                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelayMilliseconds"
                                                  Label="Max Delay (ms)"
                                                  Variant="Variant.Text"
                                                  Margin="Margin.Dense" />

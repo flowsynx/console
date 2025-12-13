@@ -126,7 +126,7 @@
             {
                 name = task.Name,
                 type = displayType,
-                parameters = task.Parameters
+                parameters = task.Execution.Parameters
             };
 
             var id = await JSRuntime.InvokeAsync<int>(
@@ -141,7 +141,7 @@
 
         foreach (var t in WorkflowContainer.Workflow.Tasks)
         {
-            foreach (var dep in t.Dependencies)
+            foreach (var dep in t.FlowControl.Dependencies)
             {
                 var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.Name == dep);
                 if (from != null)
@@ -181,7 +181,7 @@
         {
             name = newTask.Name,
             type = displayType,
-            parameters = newTask.Parameters
+            parameters = newTask.Execution.Parameters
         };
 
         var id = await JSRuntime.InvokeAsync<int>(
@@ -196,13 +196,13 @@
         StateHasChanged();
     }
 
-    private void SetParam(string key, string value) => SelectedTask.Parameters[key] = value;
-    private void RemoveParam(string key) => SelectedTask.Parameters.Remove(key);
+    private void SetParam(string key, string value) => SelectedTask.Execution.Parameters[key] = value;
+    private void RemoveParam(string key) => SelectedTask.Execution.Parameters.Remove(key);
     private void AddParam()
     {
         if (!string.IsNullOrWhiteSpace(_newKey))
         {
-            SelectedTask.Parameters[_newKey] = _newValue;
+            SelectedTask.Execution.Parameters[_newKey] = _newValue;
             _newKey = _newValue = null;
         }
     }
@@ -235,13 +235,13 @@
     }
 
     private void UpdateDepsFromText() =>
-        SelectedTask.Dependencies = _deps?.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
+        SelectedTask.FlowControl.Dependencies = _deps?.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
 
     [JSInvokable]
     public Task OnNodeSelected(string id)
     {
         SelectedTask = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == id);
-        _deps = SelectedTask != null ? string.Join(',', SelectedTask.Dependencies) : string.Empty;
+        _deps = SelectedTask != null ? string.Join(',', SelectedTask.FlowControl.Dependencies) : string.Empty;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -254,9 +254,9 @@
     {
         var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
         var to = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
-        if (from != null && to != null && !to.Dependencies.Contains(from.Name))
-            to.Dependencies.Add(from.Name);
-        _deps = SelectedTask == to ? string.Join(',', to.Dependencies) : _deps;
+        if (from != null && to != null && !to.FlowControl.Dependencies.Contains(from.Name))
+            to.FlowControl.Dependencies.Add(from.Name);
+        _deps = SelectedTask == to ? string.Join(',', to.FlowControl.Dependencies) : _deps;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -266,8 +266,8 @@
     {
         var from = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == fromId);
         var to = WorkflowContainer.Workflow.Tasks.FirstOrDefault(x => x.NodeId == toId);
-        to?.Dependencies.Remove(from?.Name);
-        _deps = SelectedTask == to ? string.Join(',', to.Dependencies) : _deps;
+        to?.FlowControl.Dependencies.Remove(from?.Name);
+        _deps = SelectedTask == to ? string.Join(',', to.FlowControl.Dependencies) : _deps;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -279,7 +279,7 @@
         if (t != null)
         {
             WorkflowContainer.Workflow.Tasks.Remove(t);
-            foreach (var o in WorkflowContainer.Workflow.Tasks) o.Dependencies.Remove(t.Name);
+            foreach (var o in WorkflowContainer.Workflow.Tasks) o.FlowControl.Dependencies.Remove(t.Name);
             if (SelectedTask == t) { SelectedTask = null; _deps = string.Empty; }
         }
         StateHasChanged();
