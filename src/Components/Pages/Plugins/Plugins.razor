@@ -14,7 +14,7 @@
 <HeaderTitle 
     Title="Managing plugins"
     Description="This section enumerates all plugins currently installed and available within the FlowSynx system. Each entry includes the plugin name, version, type, and a brief description of its functionality."
-    Icon="@Icons.Material.Filled.GridView"
+    Icon="@Icons.Material.Filled.Extension"
     IconColor="Color.Primary"
     IconSize="Size.Large" />
 
@@ -26,10 +26,18 @@
           Striped="false"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
-        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Add" class="mr-1" OnClick="InstallPlugin">Install</MudButton>
-        <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>
+        <MudFab Color="Color.Primary" 
+                Size="@Size.Small"
+                StartIcon="@Icons.Material.Filled.Add" 
+                Label="Install"
+                OnClick="InstallPlugin" />
+
+        <MudFab Color="Color.Surface"
+                Size="@Size.Small"
+                StartIcon="@Icons.Material.Filled.Refresh"
+                class="ml-2"
+                Label="Refresh"
+                OnClick="Refresh" />
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Type</MudTh>

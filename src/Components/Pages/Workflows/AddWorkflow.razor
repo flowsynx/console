@@ -23,14 +23,12 @@
     <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.DesignServices">
         <MudToolBar Dense="true" Gutters="false" Class="toolbar">
             <MudTooltip Text="Save workflow">
-                <MudButton Variant="Variant.Filled"
-                               Size="@Size.Medium"
-                               Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Save"
-                               Disabled="@IsProcessing"
-                               OnClick="Save">
-                               Save
-                </MudButton>
+                <MudFab StartIcon="@Icons.Material.Filled.Save"
+                            Color="Color.Primary"
+                            Size="Size.Medium"
+                            Label="Save"
+                            Disabled="@IsProcessing"
+                            OnClick="Save" />
             </MudTooltip>
             <MudTooltip Text="@(CurrentView == View.Code ? "Switch to Designer" : "Switch to JSON")">
                 <MudIconButton Variant="Variant.Text"

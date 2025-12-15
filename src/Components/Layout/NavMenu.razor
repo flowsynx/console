@@ -1,27 +1,66 @@
-﻿<MudNavMenu Dense="true">
+﻿<MudNavMenu Class="px-2 pt-2">
+
+    <!-- Main -->
     <MudNavLink Href="/"
                 Match="NavLinkMatch.All"
-                Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudDivider />
-    <MudNavLink Href="/plugins"
-                Match="NavLinkMatch.Prefix"
-                Icon="@Icons.Material.Filled.GridView">Plugins</MudNavLink>
-    <MudDivider />
-    <MudNavLink Href="/workflows"
-                Match="NavLinkMatch.Prefix"
-                Icon="@Icons.Material.Filled.ListAlt">Workflows</MudNavLink>
-    <MudDivider />
-    <MudNavLink Href="/logs"
-                Match="NavLinkMatch.Prefix"
-                Icon="@Icons.Material.Filled.ReceiptLong">Logs</MudNavLink>
-    <MudDivider />
-    <MudNavLink Href="/health"
-                Match="NavLinkMatch.Prefix"
-                Icon="@Icons.Material.Filled.MonitorHeart">Health</MudNavLink>
-    <MudDivider />
-    <MudNavLink Href="/version"
-                Match="NavLinkMatch.Prefix"
-                Icon="@Icons.Material.Filled.Info">Version</MudNavLink>
+                Icon="@Icons.Material.Filled.Home"
+                IconColor="Color.Primary"
+                Class="nav-item">
+        Home
+    </MudNavLink>
+
+    <MudDivider Class="my-1" />
+
+    <!-- Core -->
+    <MudNavGroup Title="Core"
+                 Icon="@Icons.Material.Filled.Dashboard"
+                 Expanded="true">
+
+        <MudNavLink Href="/plugins"
+                    Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.Extension"
+                    Class="nav-item">
+            Plugins
+        </MudNavLink>
+
+        <MudNavLink Href="/workflows"
+                    Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.AccountTree"
+                    Class="nav-item">
+            Workflows
+        </MudNavLink>
+
+        <MudNavLink Href="/logs"
+                    Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.ReceiptLong"
+                    Class="nav-item">
+            Logs
+        </MudNavLink>
+
+    </MudNavGroup>
+
+    <MudDivider Class="my-1" />
+
+    <!-- System -->
+    <MudNavGroup Title="System"
+                 Icon="@Icons.Material.Filled.Settings">
+
+        <MudNavLink Href="/health"
+                    Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.MonitorHeart"
+                    Class="nav-item">
+            Health
+        </MudNavLink>
+
+        <MudNavLink Href="/version"
+                    Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.Info"
+                    Class="nav-item">
+            Version
+        </MudNavLink>
+
+    </MudNavGroup>
+
 </MudNavMenu>
 
 @code {

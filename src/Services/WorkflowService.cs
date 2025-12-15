@@ -44,7 +44,7 @@ public class WorkflowService: IWorkflowService
         };
         wf.Workflow.Tasks.Add(new WorkflowTask
         {
-            Name = "A",
+            Name = "ExternalProcess",
             Type = "FlowSynx.Execution.ExternalProcess:latest",
             Execution = new ExecutionConfig { 
                 TimeoutMilliseconds = 1000000,
@@ -69,7 +69,7 @@ public class WorkflowService: IWorkflowService
         });
         wf.Workflow.Tasks.Add(new WorkflowTask
         {
-            Name = "B",
+            Name = "LocalFileSystem",
             Type = "FlowSynx.Storage.Local:latest",
             Execution = new ExecutionConfig
             { 
@@ -82,7 +82,7 @@ public class WorkflowService: IWorkflowService
                 TimeoutMilliseconds = 1000000
             },
             FlowControl = new FlowControlConfig { 
-                Dependencies = new List<string> { "A" }
+                Dependencies = new List<string> { "ExternalProcess" }
             },
             ErrorHandling = new ErrorHandling { 
                 Strategy = "Abort", 

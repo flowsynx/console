@@ -5,67 +5,111 @@
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
 
-<MudTextField @bind-Value="_search"
-              Placeholder="Search plugin..."
-              Adornment="Adornment.Start"
-              AdornmentIcon="@Icons.Material.Filled.Search"
-              Immediate="true"
-              DebounceInterval="150"
-              Clearable="true" />
+<MudPaper Elevation="0">
+    <!-- Header -->
+    <MudStack Spacing="2">
+        <!-- Search -->
+        <MudTextField @bind-Value="_search"
+                      Placeholder="Search by plugin or version"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true"
+                      DebounceInterval="200"
+                      Clearable="true"
+                      Variant="Variant.Outlined"
+                      Class="rounded-xl" />
 
-<MudExpansionPanels Outlined="true"
-                    Gutters="false"
-                    Dense="true"
-                    Square="true"
-                    Elevation="0"
-                    MultiExpansion="true">
-    @if (FilteredItems.Count == 0)
-    {
-        <MudExpansionPanel Disabled="true" Gutters="false" Dense="true" Class="no-gap">
-            <TitleContent>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">No matches</MudText>
-            </TitleContent>
-        </MudExpansionPanel>
-    }
-    else
-    {
-        @foreach (var item in FilteredItems)
+        <!-- Loading state -->
+        @if (_loading)
         {
-            <MudExpansionPanel Gutters="false" Dense="true" Class="no-gap">
-                <TitleContent>
-                    <MudText Typo="Typo.subtitle2"
-                             Class="cursor-pointer"
-                             @ondblclick="() => ApplyLatest(item)">
-                        @item.Type
-                    </MudText>
-                </TitleContent>
-
-                <ChildContent>
-                    <MudList T="object" Dense="true">
-                        @foreach (var version in item.Versions)
-                        {
-                            var pluginType = $"{item.Type}:{version}";
-                            <MudListItem T="object"
-                                         OnClick="@(() => OnItemClick.InvokeAsync(pluginType))">
-                                <MudText Typo="Typo.body2">Version: @version</MudText>
-                            </MudListItem>
-                        }
-                    </MudList>
-                </ChildContent>
-            </MudExpansionPanel>
+            <MudSkeleton Height="48px" />
+            <MudSkeleton Height="48px" />
+            <MudSkeleton Height="48px" />
         }
+        else if (FilteredItems.Count == 0)
+        {
+            <!-- Empty state -->
+            <MudPaper Class="pa-6 text-center rounded-xl" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Style="@($"color:{Colors.Gray.Default};")" />
+                <MudText Typo="Typo.subtitle1" Class="mt-2">No plugins found</MudText>
+                <MudText Typo="Typo.body2" Style="@($"color:{Colors.Gray.Default};")">
+                    Try adjusting your search
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <!-- Plugin cards -->
+            <MudGrid>
+                @foreach (var item in FilteredItems)
+                {
+                    <MudItem xs="12" sm="12" md="12">
+                        <MudCard Class="rounded-2xl h-100 hover-card" Elevation="1">
+                            <MudCardHeader>
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.subtitle1" Class="fw-600">
+                                        @item.Type
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="@($"color:{Colors.Gray.Default};")">
+                                        @item.Versions.Count version(s)
+                                    </MudText>
+                                </MudStack>
+                                <MudSpacer />
+                                <MudTooltip Text="Apply latest version">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Bolt"
+                                                   Color="Color.Primary"
+                                                   OnClick="() => ApplyLatest(item)" />
+                                </MudTooltip>
+                            </MudCardHeader>
+
+                            <MudDivider />
+
+                            <MudCardContent>
+                                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                                    @foreach (var version in item.Versions)
+                                    {
+                                        var pluginType = $"{item.Type}:{version}";
+                                        <MudChip T="string" Clickable="true"
+                                                 Variant="Variant.Outlined"
+                                                 Size="Size.Small"
+                                                 Color="Color.Default"
+                                                 OnClick="() => OnItemClick.InvokeAsync(pluginType)">
+                                            @version
+                                        </MudChip>
+                                    }
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </MudStack>
+</MudPaper>
+
+<style>
+    .hover-card {
+        transition: transform .15s ease, box-shadow .15s ease;
     }
-</MudExpansionPanels>
+
+    .hover-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--mud-elevation-6);
+    }
+</style>
 
 @code {
     [Parameter] public EventCallback<string> OnItemClick { get; set; }
 
     private List<PluginTypeInfo> Items { get; set; } = new();
     private string _search = string.Empty;
+    private bool _loading;
 
     protected override async Task OnInitializedAsync()
     {
+        _loading = true;
         Items = await LoadPluginTypes(CancellationToken.None);
+        _loading = false;
     }
 
     private List<PluginTypeInfo> FilteredItems =>
@@ -81,68 +125,47 @@
     {
         try
         {
-            var accessTokenResult = await TokenProvider.GetAccessTokenAsync();
-            string? token;
-
-            token = string.IsNullOrEmpty(accessTokenResult)
-                ? "No token available or user not authenticated."
-                : accessTokenResult;
-
-            var authenticationStrategy = new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token);
-            FlowSynxClient.SetAuthenticationStrategy(authenticationStrategy);
+            var token = await TokenProvider.GetAccessTokenAsync();
+            FlowSynxClient.SetAuthenticationStrategy(
+                new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token));
 
             var request = new FlowSynx.Client.Messages.Requests.Plugins.PluginsListRequest
             {
                 Page = 1,
                 PageSize = int.MaxValue
             };
+
             var result = await FlowSynxClient.Plugins.ListAsync(request, cancellationToken);
 
-            if (result.StatusCode != 200)
+            if (result.StatusCode != 200 || !result.Payload.Succeeded)
             {
-                SnackBar.Add("Failed to load plugins: Bad response code.", Severity.Error);
-                return new List<PluginTypeInfo>();
+                SnackBar.Add("Failed to load plugins", Severity.Error);
+                return new();
             }
 
-            if (!result.Payload.Succeeded)
-            {
-                var errorMessage = string.Join(Environment.NewLine, result.Payload.Messages);
-                SnackBar.Add($"Plugin error:\n{errorMessage}", Severity.Error);
-                return new List<PluginTypeInfo>();
-            }
-
-            // Group plugins by type, collect versions
             return result.Payload.Data
                 .GroupBy(p => p.Type)
                 .Select(g => new PluginTypeInfo
-                    {
-                        Type = g.Key,
-                        Versions = g.Select(x => x.Version)
-                                    .Distinct()
-                                    .OrderByDescending(v => v) // latest first
-                                    .ToList()
-                    })
+                {
+                    Type = g.Key,
+                    Versions = g.Select(x => x.Version)
+                                .Distinct()
+                                .OrderByDescending(v => v)
+                                .ToList()
+                })
                 .ToList();
         }
         catch (Exception ex)
         {
-            SnackBar.Add($"Exception occurred: {ex.Message}", Severity.Error);
-            return new List<PluginTypeInfo>();
+            SnackBar.Add(ex.Message, Severity.Error);
+            return new();
         }
     }
 
     private void ApplyLatest(PluginTypeInfo plugin)
     {
-        if (plugin.Versions.Any())
-        {
-            var latest = plugin.Versions.First(); // versions are sorted descending
-            var pluginType = $"{plugin.Type}:{latest}";
-            OnItemClick.InvokeAsync(pluginType);
-        }
-        else
-        {
-            OnItemClick.InvokeAsync($"{plugin.Type}:latest");
-        }
+        var version = plugin.Versions.FirstOrDefault() ?? "latest";
+        OnItemClick.InvokeAsync($"{plugin.Type}:{version}");
     }
 
     private class PluginTypeInfo

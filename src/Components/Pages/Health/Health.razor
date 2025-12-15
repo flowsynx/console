@@ -30,11 +30,11 @@
             LoadingProgressColor="Color.Primary"
             RowClassFunc="GetRowClass">
             <ToolBarContent>
-                <MudButton Variant="Variant.Outlined" 
-                           Color="Color.Default" 
-                           OnClick="RefreshAsync" 
-                           StartIcon="@Icons.Material.Filled.Refresh" 
-                           Size="@Size.Small">Refresh</MudButton>
+                <MudFab Color="Color.Surface"
+                        Size="@Size.Small"
+                        StartIcon="@Icons.Material.Filled.Refresh"
+                        Label="Refresh"
+                        OnClick="RefreshAsync" />
             </ToolBarContent>
             <HeaderContent>
                 <MudTh>Component</MudTh>

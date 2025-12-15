@@ -116,3 +116,56 @@ h1:focus {
     display: flex;
     opacity: 1;
 }
+
+.designer-root.modern {
+    display: flex;
+    background: radial-gradient(1200px 600px at 10% 0%, #eef2ff, transparent), radial-gradient(1200px 600px at 90% 10%, #ecfeff, transparent);
+}
+
+.canvas-wrap {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
+.canvas-appbar {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    z-index: 10;
+    padding: 2px 8px;
+    border-radius: 0px;
+}
+
+.zoom-controls {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+}
+
+.drawflow-canvas {
+    height: 100%;
+    width: 100%;
+}
+
+.palette-drawer.glass {
+    backdrop-filter: blur(14px);
+}
+
+.mud-nav-link,
+.mud-nav-group,
+.mud-nav-menu {
+    border-radius: 12px;
+}
+
+.nav-item {
+    margin: 2px 0;
+}
+
+.mud-nav-link.active {
+    font-weight: 600;
+}

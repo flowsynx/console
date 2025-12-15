@@ -113,6 +113,7 @@
             <div class="title-text">
                 <div>${name}</div>
                 <div class="title-type">${data.type || ""}</div>
+                <div class="title-operation">Operation: ${data.operation || ""}</div>
             </div>
             <span class="status-icon"></span>
         </div>`

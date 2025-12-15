@@ -21,7 +21,7 @@
 
         @if (!string.IsNullOrWhiteSpace(Description))
         {
-            <MudText Typo="Typo.body2" Class="gray-subtitle">
+            <MudText Typo="Typo.body2" Style="@($"color:{Colors.Gray.Default};")">
                 @Description
             </MudText>
         }

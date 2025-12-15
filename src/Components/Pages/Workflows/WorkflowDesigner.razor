@@ -5,47 +5,71 @@
 @inject IJSRuntime JSRuntime
 @inject IDialogService DialogService
 
-<div class="designer-root">
-    <div class="palette-container">
-        <MudTooltip Text="@(IsPaletteVisible ? "Close panel" : "Open panel and add plugins")">
-            <MudIconButton Variant="Variant.Filled"
-            Size="Size.Medium"
-            Icon="@(IsPaletteVisible ? Icons.Material.Filled.Close : Icons.Material.Filled.Add)"
-            Color="Color.Primary"
-            Class="palette-toggle"
-            OnClick="TogglePalette" />
-        </MudTooltip>
+<div class="designer-root modern">
+    <!-- Floating Palette Drawer -->
+    <MudDrawer Open="@IsPaletteVisible"
+               Anchor="Anchor.Right"
+               Elevation="8"
+               Variant="DrawerVariant.Temporary"
+               OverlayAutoClose="false"
+               Class="palette-drawer glass">
 
-        <!-- Palette -->
-        <div class="palette @(IsPaletteVisible ? "visible" : "hidden")">
-            <HeaderTitle Title="Plugins" Class="px-2 py-2" />
+        <MudStack Class="pa-4" Spacing="2">
+            <MudStack Row AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Material.Filled.Extension" Size="Size.Medium" Color="Color.Primary" />
+                <MudText Typo="Typo.h6" Class="ml-2">Plugins</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               OnClick="TogglePalette" />
+            </MudStack>
+
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Click or drag to add nodes
+            </MudText>
+
             <SearchablePluginsList OnItemClick="AddNodeTemplate" />
-        </div>
-    </div>
+        </MudStack>
+    </MudDrawer>
 
     <!-- Canvas -->
     <div class="canvas-wrap">
-        <div class="canvas-toolbar">
-            <MudIconButton Variant="Variant.Text"
-            Size="Size.Medium"
-            Icon="@Icons.Material.Filled.ZoomIn"
-            OnClick="ZoomIn" />
+        <MudPaper Class="canvas-appbar" Elevation="0">
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                <MudTooltip Text="Add plugin">
+                    <MudFab StartIcon="@Icons.Material.Filled.Add"
+                            Color="Color.Primary"
+                            Size="Size.Medium"
+                            Label="Add Plugin"
+                            OnClick="TogglePalette" />
+                </MudTooltip>
 
-            <MudIconButton Variant="Variant.Text"
-            Size="Size.Medium"
-            Icon="@Icons.Material.Filled.ZoomOut"
-            OnClick="ZoomOut" />
+                <MudDivider Vertical="true" Class="mx-2" />
 
-            <MudIconButton Variant="Variant.Text"
-            Size="Size.Medium"
-            Icon="@Icons.Material.Filled.Refresh"
-            OnClick="ZoomReset" />
+                @if (SelectedTask != null)
+                {
+                    <MudChip T="string"
+                             Color="Color.Primary"
+                             Variant="Variant.Filled"
+                             Size="Size.Large"
+                             Icon="@Icons.Material.Filled.AccountTree">
+                        @SelectedTask.Name
+                    </MudChip>
+                }
 
-            <MudIconButton Variant="Variant.Text"
-            Size="Size.Medium"
-            Icon="@Icons.Material.Filled.FilterCenterFocus"
-            OnClick="Center" />
-        </div>
+                <MudSpacer />
+
+                <MudIconButton Icon="@Icons.Material.Filled.CenterFocusStrong"
+                               Variant="Variant.Text"
+                               OnClick="Center" />
+
+                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="ZoomIn" />
+                <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="ZoomOut" />
+                <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" OnClick="ZoomReset" />
+            </MudStack>
+        </MudPaper>
+
         <div id="drawflow" style="height:100%;"></div>
     </div>
 </div>
@@ -96,6 +120,7 @@
             {
                 name = task.Name,
                 type = displayType,
+                operation = task.Execution.Operation,
                 parameters = task.Execution.Parameters
             };
 

@@ -63,11 +63,11 @@
             </MudItem>
 
             <MudItem xs="12" sm="6" md="6">
-                <MudButton Variant="Variant.Filled"
-                           OnClick="ApplyFilters"
-                           Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Search"
-                           Color="Color.Primary">Search</MudButton>
+                <MudFab Color="Color.Primary" 
+                    Size="@Size.Small"
+                        StartIcon="@Icons.Material.Filled.Search"
+                        Label="Search"
+                        OnClick="ApplyFilters" />
             </MudItem>
         </MudGrid>
     </MudForm>
