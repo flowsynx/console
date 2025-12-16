@@ -40,41 +40,59 @@
         else
         {
             <!-- Plugin cards -->
-            <MudGrid>
+            <MudGrid Spacing="3">
                 @foreach (var item in FilteredItems)
                 {
                     <MudItem xs="12" sm="12" md="12">
-                        <MudCard Class="rounded-2xl h-100 hover-card" Elevation="1">
-                            <MudCardHeader>
-                                <MudStack Spacing="1">
-                                    <MudText Typo="Typo.subtitle1" Class="fw-600">
-                                        @item.Type
-                                    </MudText>
-                                    <MudText Typo="Typo.caption" Style="@($"color:{Colors.Gray.Default};")">
+                        <MudCard Class="plugin-card" Elevation="1">
+                            <MudCardHeader Class="pb-2">
+                                <MudText Typo="Typo.subtitle1" Class="fw-semibold">
+                                    @item.Type
+                                    <br />
+                                    <MudText Typo="Typo.subtitle2"
+                                             Style="@($"color:{Colors.Gray.Default};")">
                                         @item.Versions.Count version(s)
                                     </MudText>
-                                </MudStack>
+                                </MudText>
+
                                 <MudSpacer />
+
                                 <MudTooltip Text="Apply latest version">
                                     <MudIconButton Icon="@Icons.Material.Filled.Bolt"
                                                    Color="Color.Primary"
+                                                   Variant="Variant.Text"
+                                                   Size="Size.Medium"
+                                                   Class="apply-btn"
                                                    OnClick="() => ApplyLatest(item)" />
                                 </MudTooltip>
                             </MudCardHeader>
 
                             <MudDivider />
 
-                            <MudCardContent>
+                            <MudCardContent Class="pt-3">
+                                <!-- Description -->
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <MudText Typo="Typo.body2"
+                                             Style="@($"color:{Colors.Gray.Default};")">
+                                        @item.Description
+                                    </MudText>
+                                }
+
+                                <!-- Versions -->
                                 <MudStack Row="true" Spacing="1" Class="flex-wrap">
                                     @foreach (var version in item.Versions)
                                     {
                                         var pluginType = $"{item.Type}:{version}";
-                                        <MudChip T="string" Clickable="true"
+
+                                        <MudChip T="string"
+                                                 Clickable="true"
                                                  Variant="Variant.Outlined"
-                                                 Size="Size.Small"
-                                                 Color="Color.Default"
+                                                 Size="Size.Medium"
+                                                 Color="Color.Primary"
+                                                 Class="version-chip mt-3"
                                                  OnClick="() => OnItemClick.InvokeAsync(pluginType)">
-                                            @version
+                                            v @version
                                         </MudChip>
                                     }
                                 </MudStack>
@@ -86,17 +104,6 @@
         }
     </MudStack>
 </MudPaper>
-
-<style>
-    .hover-card {
-        transition: transform .15s ease, box-shadow .15s ease;
-    }
-
-    .hover-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--mud-elevation-6);
-    }
-</style>
 
 @code {
     [Parameter] public EventCallback<string> OnItemClick { get; set; }
@@ -118,6 +125,7 @@
             : Items
                 .Where(i =>
                     i.Type.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                    i.Description?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
                     i.Versions.Any(v => v.Contains(_search, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
 
@@ -148,6 +156,7 @@
                 .Select(g => new PluginTypeInfo
                 {
                     Type = g.Key,
+                    Description = g.FirstOrDefault()?.Description,
                     Versions = g.Select(x => x.Version)
                                 .Distinct()
                                 .OrderByDescending(v => v)
@@ -171,6 +180,7 @@
     private class PluginTypeInfo
     {
         public string Type { get; set; } = string.Empty;
+        public string? Description { get; set; } = string.Empty;
         public List<string> Versions { get; set; } = new();
     }
 }

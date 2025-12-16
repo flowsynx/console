@@ -20,74 +20,112 @@
              IconColor="Color.Primary"
              IconSize="Size.Large" />
 
-<MudTabs Outlined="true"
-         Position="Position.Top"
+<MudTabs Position="Position.Top"
          Rounded="true"
-         Border="true"
-         ApplyEffectsToContainer="true"
-         Class="mb-4">
-    <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.DesignServices" Disabled="@IsProcessing">
-        <MudToolBar Dense="true" Gutters="false" Class="toolbar">
-            <MudTooltip Text="Save workflow">
-                <MudButton Variant="Variant.Filled"
-                               Size="@Size.Medium"
-                               Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Save"
-                               Disabled="@IsProcessing"
-                               OnClick="Save">
-                               Save
-                </MudButton>
-            </MudTooltip>
-            <MudTooltip Text="@(CurrentView == View.Code ? "Switch to Designer" : "Switch to JSON")">
-                <MudIconButton Variant="Variant.Text"
-                               Size="@Size.Medium"
-                               Color="Color.Default"
-                               Disabled="@IsProcessing"
-                               Icon="@(CurrentView == View.Code ? Icons.Material.Filled.DesignServices : Icons.Material.Filled.Code)"
-                               OnClick="ToggleCodeDesigner">
-                </MudIconButton>
-            </MudTooltip>
-            @if (CurrentView == View.Designer)
-            {
-                <MudTooltip Text="Configure workflow">
-                    <MudIconButton Variant="Variant.Text"
-                    Size="@Size.Medium"
-                    Color="Color.Default"
-                    Disabled="@IsProcessing"
-                    Icon="@Icons.Material.Filled.Settings"
-                    OnClick="ConfigureWorkflow">
-                    </MudIconButton>
+         Class="modern-tabs mb-4">
+
+
+    <!-- DESIGNER TAB -->
+    <MudTabPanel Text="Designer"
+                 Icon="@Icons.Material.Filled.AccountTree"
+                 Disabled="@IsProcessing">
+
+
+        <!-- Floating Action Bar -->
+        <MudPaper Elevation="2" Class="action-bar glass">
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+
+
+                <!-- Primary: Save -->
+                <MudTooltip Text="Save workflow">
+                    <MudIconButton Icon="@Icons.Material.Filled.Save"
+                                   Color="Color.Primary"
+                                   Disabled="@IsProcessing"
+                                   Size="Size.Medium"
+                                   OnClick="Save" />
                 </MudTooltip>
-            }
-            <MudSpacer />
-            <MudTooltip Text="Delete workflow">
-                <MudButton Variant="Variant.Filled"
-                Size="@Size.Medium"
-                Color="Color.Error"
-                Disabled="@IsProcessing"
-                StartIcon="@Icons.Material.Filled.Delete"
-                Class="mr-1"
-                OnClick="DeleteWorkflow">
-                    Delete
-                </MudButton>
-            </MudTooltip>
-            <MudTooltip Text="Execute workflow">
-                <MudButton Variant="Variant.Filled"
-                Size="@Size.Medium"
-                Color="Color.Primary"
-                Disabled="@IsProcessing"
-                StartIcon="@Icons.Material.Filled.PlayArrow"
-                OnClick="ExecuteWorkflow">
-                    Execute
-                </MudButton>
-            </MudTooltip>
-        </MudToolBar>
-        @RenderCurrentView()
+
+
+                <MudDivider Vertical Class="mx-1" />
+
+
+                <!-- Toggle View -->
+                <MudTooltip Text="@(CurrentView == View.Code ? "Switch to Designer" : "Switch to JSON")">
+                    <MudIconButton Icon="@(CurrentView == View.Code
+                                   ? Icons.Material.Filled.DesignServices
+                                   : Icons.Material.Filled.Code)"
+                                   Color="Color.Default"
+                                   Disabled="@IsProcessing"
+                                   Size="Size.Medium"
+                                   OnClick="ToggleCodeDesigner" />
+                </MudTooltip>
+
+
+                <!-- Configure -->
+                @if (CurrentView == View.Designer)
+                {
+                    <MudTooltip Text="Configure workflow">
+                        <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                                       Color="Color.Default"
+                                       Disabled="@IsProcessing"
+                                       Size="Size.Medium"
+                                       OnClick="ConfigureWorkflow" />
+                    </MudTooltip>
+                }
+
+
+                <MudSpacer />
+
+
+                <!-- Destructive & Run Actions (Grouped Right) -->
+                <MudStack Row Spacing="0">
+                    <MudTooltip Text="Delete workflow">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Disabled="@IsProcessing"
+                                       Size="Size.Medium"
+                                       OnClick="DeleteWorkflow" />
+                    </MudTooltip>
+
+
+                    <MudTooltip Text="Execute workflow">
+                        <MudIconButton Icon="@Icons.Material.Filled.PlayArrow"
+                                       Color="Color.Success"
+                                       Disabled="@IsProcessing"
+                                       Size="Size.Medium"
+                                       OnClick="ExecuteWorkflow" />
+                    </MudTooltip>
+                </MudStack>
+
+                <!-- View Indicator -->
+                <MudChip T="string" Color="Color.Primary"
+                         Variant="Variant.Outlined"
+                         StartIcon="@(CurrentView == View.Code ? Icons.Material.Filled.Code : Icons.Material.Filled.DesignServices)">
+                    @(CurrentView == View.Code ? "JSON" : "Designer")
+                </MudChip>
+            </MudStack>
+        </MudPaper>
+
+
+        <!-- Content -->
+        <MudPaper Class="designer-content" Elevation="1">
+            @RenderCurrentView()
+        </MudPaper>
     </MudTabPanel>
-    <MudTabPanel Text="Executions" Icon="@Icons.Material.Filled.PlayArrow" Disabled="@IsProcessing">
+
+
+    <!-- EXECUTIONS TAB -->
+    <MudTabPanel Text="Executions"
+                 Icon="@Icons.Material.Filled.PlayArrow"
+                 Disabled="@IsProcessing">
         <WorkflowExecutions WorkflowId="@id" />
     </MudTabPanel>
-    <MudTabPanel Text="Triggers" Icon="@Icons.Material.Filled.Bolt" Disabled="@IsProcessing">
+
+
+    <!-- TRIGGERS TAB -->
+    <MudTabPanel Text="Triggers"
+                 Icon="@Icons.Material.Filled.Bolt"
+                 Disabled="@IsProcessing">
         <WorkflowTriggers WorkflowId="@id" />
     </MudTabPanel>
 </MudTabs>

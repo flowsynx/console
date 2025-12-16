@@ -18,10 +18,18 @@
           Striped="false"
           @ref="_table" LoadingProgressColor="Color.Primary">
     <ToolBarContent>
-        <MudButton DisableElevation Variant="Variant.Outlined" Color="Color.Default" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Add" class="mr-1" OnClick="AddTrigger">Add trigger</MudButton>
-        <MudButton DisableElevation Variant="Variant.Outlined" OnClick="Refresh" Size="@Size.Small"
-                   StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Default">Refresh</MudButton>
+        <MudFab StartIcon="@Icons.Material.Filled.Add"
+                Color="Color.Primary"
+                Size="Size.Medium"
+                Label="Add Trigger"
+                OnClick="AddTrigger" />
+
+        <MudFab Color="Color.Surface"
+                Size="@Size.Small"
+                StartIcon="@Icons.Material.Filled.Refresh"
+                Label="Refresh"
+                class="ml-2"
+                OnClick="Refresh" />
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Status</MudTh>

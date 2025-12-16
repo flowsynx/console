@@ -11,48 +11,71 @@
 @inject NavigationManager Navigation
 
 <PageTitle>FlowSynx add workflow</PageTitle>
-<HeaderTitle 
-    Title="Workflow designer" 
-    Description="A visual interface to create, edit, and manage workflow." 
-    Icon="@Icons.Material.Filled.DesignServices"
-    IconColor="Color.Primary"
-    IconSize="Size.Large" />
+<HeaderTitle Title="Workflow designer"
+             Description="A visual interface to create, edit, and manage workflow."
+             Icon="@Icons.Material.Filled.DesignServices"
+             IconColor="Color.Primary"
+             IconSize="Size.Large" />
 
-<MudTabs Outlined="true" Position="Position.Top" Rounded="true" Border="true"
-         ApplyEffectsToContainer="true" Class="mb-4">
-    <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.DesignServices">
-        <MudToolBar Dense="true" Gutters="false" Class="toolbar">
-            <MudTooltip Text="Save workflow">
-                <MudFab StartIcon="@Icons.Material.Filled.Save"
-                            Color="Color.Primary"
-                            Size="Size.Medium"
-                            Label="Save"
-                            Disabled="@IsProcessing"
-                            OnClick="Save" />
-            </MudTooltip>
-            <MudTooltip Text="@(CurrentView == View.Code ? "Switch to Designer" : "Switch to JSON")">
-                <MudIconButton Variant="Variant.Text"
-                               Size="@Size.Medium"
-                               Color="Color.Default"
-                               Disabled="@IsProcessing"
-                               Icon="@(CurrentView == View.Code ? Icons.Material.Filled.DesignServices : Icons.Material.Filled.Code)"
-                               OnClick="ToggleCodeDesigner">
-                </MudIconButton>
-            </MudTooltip>
-            @if (CurrentView == View.Designer)
-            {
-                <MudTooltip Text="Configure workflow">
-                    <MudIconButton Variant="Variant.Text"
-                    Size="@Size.Medium"
-                    Color="Color.Default"
-                    Disabled="@IsProcessing"
-                    Icon="@Icons.Material.Filled.Settings"
-                    OnClick="ConfigureWorkflow">
-                    </MudIconButton>
-                </MudTooltip>
-            }
-        </MudToolBar>
-        @RenderCurrentView()
+<MudTabs Position="Position.Top"
+         Rounded="true"
+         Class="modern-tabs full-height-tabs mb-4">
+
+    <MudTabPanel Text="Designer" Icon="@Icons.Material.Filled.AccountTree" Class="full-height-panel">
+        <MudStack Class="panel-root">
+
+            <!-- Floating Action Bar -->
+            <MudPaper Elevation="2" Class="action-bar glass">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+
+                    <MudTooltip Text="Save workflow">
+                        <MudIconButton Icon="@Icons.Material.Filled.Save"
+                                       Color="Color.Primary"
+                                       Disabled="@IsProcessing"
+                                       Size="Size.Medium"
+                                       OnClick="Save" />
+                    </MudTooltip>
+
+                    <MudDivider Vertical />
+
+                    <MudTooltip Text="@(CurrentView == View.Code ? "Switch to Designer" : "Switch to JSON")">
+                        <MudIconButton Icon="@(CurrentView == View.Code
+                                                                              ? Icons.Material.Filled.DesignServices
+                                                                              : Icons.Material.Filled.Code)"
+                                       Color="Color.Default"
+                                       Disabled="@IsProcessing"
+                                       Size="Size.Medium"
+                                       OnClick="ToggleCodeDesigner" />
+                    </MudTooltip>
+
+                    @if (CurrentView == View.Designer)
+                    {
+                        <MudTooltip Text="Configure workflow">
+                            <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                                           Color="Color.Default"
+                                           Disabled="@IsProcessing"
+                                           Size="Size.Medium"
+                                           OnClick="ConfigureWorkflow" />
+                        </MudTooltip>
+                    }
+
+                    <MudSpacer />
+
+                    <!-- View Indicator -->
+                    <MudChip T="string" Color="Color.Primary"
+                             Variant="Variant.Outlined"
+                             StartIcon="@(CurrentView == View.Code ? Icons.Material.Filled.Code : Icons.Material.Filled.DesignServices)">
+                        @(CurrentView == View.Code ? "JSON" : "Designer")
+                    </MudChip>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Content -->
+            <MudPaper Class="designer-content" Elevation="1">
+                @RenderCurrentView()
+            </MudPaper>
+
+        </MudStack>
     </MudTabPanel>
 </MudTabs>
 
@@ -159,24 +182,24 @@
     private async Task ConfigureWorkflow()
     {
         var options = new DialogOptions
-            {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                BackdropClick = false,
-                CloseOnEscapeKey = false,
-                BackgroundClass = "blur-dialog-background"
-            };
-
-        var parameters = new DialogParameters 
         {
-            { 
-                "Config", new WorkflowViewModel 
-                { 
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
+            BackgroundClass = "blur-dialog-background"
+        };
+
+        var parameters = new DialogParameters
+        {
+            {
+                "Config", new WorkflowViewModel
+                {
                     Schema = WorkflowContainer.Schema,
                     Name = WorkflowContainer.Workflow.Name,
                     Description = WorkflowContainer.Workflow.Description,
                     Configuration = WorkflowContainer.Workflow.Configuration
-                } 
+                }
             }
         };
 

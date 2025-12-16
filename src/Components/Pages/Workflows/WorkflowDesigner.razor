@@ -12,6 +12,7 @@
                Elevation="8"
                Variant="DrawerVariant.Temporary"
                OverlayAutoClose="false"
+               Width="400px"
                Class="palette-drawer glass">
 
         <MudStack Class="pa-4" Spacing="2">
@@ -21,11 +22,11 @@
                 <MudSpacer />
                 <MudIconButton Icon="@Icons.Material.Filled.Close"
                                Color="Color.Default"
-                               Size="Size.Small"
+                               Size="Size.Medium"
                                OnClick="TogglePalette" />
             </MudStack>
 
-            <MudText Typo="Typo.caption" Color="Color.Secondary">
+            <MudText Typo="Typo.caption" Style="@($"color:{Colors.Gray.Default};")">
                 Click or drag to add nodes
             </MudText>
 
@@ -40,33 +41,39 @@
                 <MudTooltip Text="Add plugin">
                     <MudFab StartIcon="@Icons.Material.Filled.Add"
                             Color="Color.Primary"
-                            Size="Size.Medium"
+                            Size="Size.Large"
                             Label="Add Plugin"
                             OnClick="TogglePalette" />
                 </MudTooltip>
 
-                <MudDivider Vertical="true" Class="mx-2" />
+                <MudDivider Vertical="true" />
 
                 @if (SelectedTask != null)
                 {
-                    <MudChip T="string"
-                             Color="Color.Primary"
-                             Variant="Variant.Filled"
-                             Size="Size.Large"
-                             Icon="@Icons.Material.Filled.AccountTree">
-                        @SelectedTask.Name
-                    </MudChip>
+                    <MudTooltip Text="Task properties. Click to modify properties">
+                        <MudChip T="string"
+                                 Color="Color.Default"
+                                 Variant="Variant.Outlined"
+                                 Size="Size.Large"
+                                 Icon="@Icons.Material.Filled.AccountTree"
+                                 OnClick="() => ShowPropertiesDialog(SelectedTask)">
+                            Selected Task: <b>@SelectedTask.Name</b>
+                        </MudChip>
+                    </MudTooltip>
                 }
 
                 <MudSpacer />
 
-                <MudIconButton Icon="@Icons.Material.Filled.CenterFocusStrong"
-                               Variant="Variant.Text"
-                               OnClick="Center" />
+                <MudPaper class="zoom-controls" Elevation="4">
+                    <MudIconButton Icon="@Icons.Material.Filled.CenterFocusStrong"
+                                   Size="Size.Medium"
+                                   Variant="Variant.Text"
+                                   OnClick="Center" />
 
-                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="ZoomIn" />
-                <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="ZoomOut" />
-                <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" OnClick="ZoomReset" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" Size="Size.Medium" OnClick="ZoomIn" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" Size="Size.Medium" OnClick="ZoomOut" />
+                    <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Medium" OnClick="ZoomReset" />
+                </MudPaper>
             </MudStack>
         </MudPaper>
 
