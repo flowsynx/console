@@ -6,49 +6,86 @@
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" /> Update plugin
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudGrid>
-            <MudItem xs="12">
-                <MudTextField For="@(() => UpdateModel.Type)"
-                              @bind-Value="UpdateModel.Type"
-                              Label="Plugin type"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
-                              ReadOnly="true"
-                              Disabled="true" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField For="@(() => UpdateModel.TargetVersion)"
-                              @bind-Value="UpdateModel.TargetVersion"
-                              Label="Target version"
-                              Required="true"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
-                              HelperText="Enter the target version of the plugin" />
-            </MudItem>
-        </MudGrid>
-    </DialogContent>
-    <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Outlined" 
-                                    StartIcon="@Icons.Material.Filled.Close"
-                                    Color="Color.Default"
-                                    Disabled="@IsProcessing"
-                                    Size="Size.Small"
-                                    OnClick="Cancel">Cancel</MudButton>
+<MudDialog MaxWidth="MaxWidth.Small"
+           FullWidth="true"
+           DisableBackdropClick="@IsProcessing"
+           CloseOnEscapeKey="false">
 
-        <MudButton DisableElevation Variant="Variant.Filled" 
-                                    StartIcon="@Icons.Material.Filled.Save"
-                                    Color="Color.Primary" 
-                                    Disabled="@IsProcessing"
-                                    Size="Size.Small"
-                                    OnClick="Update">@(IsProcessing ? "Updating..." : "Update")</MudButton>
-    </DialogActions>
+    <DialogContent>
+
+        <MudCard Elevation="0" Class="rounded-xl">
+
+            <!-- Body -->
+            <MudCardContent Class="pt-4">
+
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                    Update an installed plugin to a specific target version.
+                </MudText>
+
+                <!-- Current plugin -->
+                <MudTextField Value="@UpdateModel.Type"
+                              Label="Current Plugin"
+                              Variant="Variant.Filled"
+                              StartIcon="@Icons.Material.Filled.Extension"
+                              ReadOnly="true"
+                              Disabled="true"
+                              Class="mb-4" />
+
+                <!-- Target version -->
+                <MudTextField @bind-Value="UpdateModel.TargetVersion"
+                              Label="Target Version"
+                              Placeholder="e.g. 2.3.1"
+                              Variant="Variant.Filled"
+                              Required="true"
+                              StartIcon="@Icons.Material.Filled.Tag"
+                              Disabled="@IsProcessing"
+                              HelperText="Enter the version you want to update to" />
+
+                <MudAlert Severity="Severity.Normal"
+                          Variant="Variant.Outlined"
+                          Dense="true"
+                          Class="mt-4">
+                    The plugin will be updated in-place. Existing configurations will be preserved unless the new version introduces breaking changes.
+                </MudAlert>
+
+            </MudCardContent>
+
+            <!-- Footer -->
+            <MudDivider />
+
+            <MudCardActions Class="pa-4 d-flex justify-end gap-2">
+
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           Disabled="@IsProcessing"
+                           OnClick="Cancel">
+                    Cancel
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@IsProcessing"
+                           OnClick="Update"
+                           StartIcon="@Icons.Material.Filled.SystemUpdateAlt">
+
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Indeterminate="true"
+                                             Size="Size.Small"
+                                             Class="mr-2" />
+                        <span>Updating…</span>
+                    }
+                    else
+                    {
+                        <span>Update Plugin</span>
+                    }
+                </MudButton>
+
+            </MudCardActions>
+
+        </MudCard>
+
+    </DialogContent>
 </MudDialog>
 
 @code {

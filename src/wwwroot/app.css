@@ -60,8 +60,12 @@ h1:focus {
     backdrop-filter: blur(2px);
 }
 
-.gray-subtitle {
-    color: var(--mud-palette-text-secondary) !important;
+.gray-text {
+    color: #9E9E9E !important;
+}
+
+.mud-secondary-text {
+    color: #9E9E9E !important;
 }
 
 .task-node {
@@ -126,6 +130,17 @@ h1:focus {
     --mud-internal-toolbar-height: 0 !important;
 }
 
+.filter-box {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.mud-table {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    margin-bottom: 24px;
+}
+
 .mud-table .action-cell .actions-toolbar {
     display: flex;
     gap: 4px;
@@ -137,42 +152,6 @@ h1:focus {
 .mud-table tr:hover .action-cell .actions-toolbar {
     opacity: 1;
     transform: translateY(0);
-}
-
-.designer-root.modern {
-    display: flex;
-    background: radial-gradient(1200px 600px at 10% 0%, #eef2ff, transparent), radial-gradient(1200px 600px at 90% 10%, #ecfeff, transparent), var(--mud-palette-background);
-}
-
-.canvas-wrap {
-    position: relative;
-    flex: 1;
-    overflow: hidden;
-}
-
-.canvas-appbar {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    z-index: 10;
-    background: transparent !important;
-}
-
-.zoom-controls {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 10;
-    padding: 6px;
-    border-radius: 999px;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-}
-
-.drawflow-canvas {
-    height: 100%;
-    width: 100%;
 }
 
 .palette-drawer.glass {
@@ -204,7 +183,11 @@ h1:focus {
     z-index: 20;
     padding: 10px 14px;
     border-radius: 4px;
-    margin-bottom: 16px;
+    margin-bottom: 4px;
+}
+
+.mud-divider {
+    border-color: var(--mud-palette-lines-default) !important;
 }
 
 .glass,

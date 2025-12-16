@@ -6,40 +6,69 @@
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" /> Install plugin
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudGrid>
-            <MudItem xs="12">
-                <MudTextField For="@(() => InstallPluginRequest.Type)"
-                              @bind-Value="InstallPluginRequest.Type"
-                              Label="Plugin type"
-                              Required="true"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
-                              HelperText="Enter the type of the plugin" />
-            </MudItem>
-        </MudGrid>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Outlined"
-                   StartIcon="@Icons.Material.Filled.Close"
-                   Color="Color.Default"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Cancel">Cancel</MudButton>
+<MudDialog MaxWidth="MaxWidth.Small"
+           FullWidth="true"
+           DisableBackdropClick="@IsProcessing"
+           CloseOnEscapeKey="false">
 
-        <MudButton Variant="Variant.Filled"
-                   StartIcon="@Icons.Material.Filled.Download"
-                   Color="Color.Primary"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Install">@(IsProcessing ? "Installing..." : "Install")</MudButton>
-    </DialogActions>
+    <DialogContent>
+
+        <MudCard Elevation="0" Class="rounded-xl">
+
+            <!-- Body -->
+            <MudCardContent Class="pt-4">
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                    Enter the plugin type you want to install. The plugin will be downloaded
+                    and registered automatically.
+                </MudText>
+
+                <MudTextField @bind-Value="InstallPluginRequest.Type"
+                              Label="Plugin Type"
+                              Placeholder="e.g. FlowSynx.Storage.Local:latest"
+                              Variant="Variant.Filled"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              StartIcon="@Icons.Material.Filled.Code"
+                              Disabled="@IsProcessing"
+                              Clearable="true" />
+            </MudCardContent>
+
+            <!-- Footer -->
+            <MudDivider />
+
+            <MudCardActions Class="pa-4 d-flex justify-end gap-2">
+
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           Disabled="@IsProcessing"
+                           OnClick="Cancel">
+                    Cancel
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@IsProcessing"
+                           OnClick="Install"
+                           StartIcon="@Icons.Material.Filled.Download">
+
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Indeterminate="true"
+                                             Size="Size.Small"
+                                             Class="mr-2" />
+                        <span>Installing…</span>
+                    }
+                    else
+                    {
+                        <span>Install Plugin</span>
+                    }
+                </MudButton>
+
+            </MudCardActions>
+
+        </MudCard>
+
+    </DialogContent>
 </MudDialog>
 
 @code {

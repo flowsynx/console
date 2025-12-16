@@ -3,6 +3,7 @@
 @using FlowSynx.Client.Messages.Responses.Health
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
+@using MudBlazor
 
 @attribute [Authorize]
 @inject IFlowSynxClient FlowSynxClient
@@ -10,65 +11,70 @@
 
 <PageTitle>FlowSynx HealthCheck</PageTitle>
 
-<HeaderTitle 
-    Title="Health Check" 
-    Description="Checking the Health of the FlowSynx System and Its Components"
-    Icon="@Icons.Material.Filled.MonitorHeart"
-    IconColor="Color.Primary"
-    IconSize="Size.Large" />
+<HeaderTitle Title="Health Check"
+             Description="Checking the Health of the FlowSynx System and Its Components"
+             Icon="@Icons.Material.Filled.MonitorHeart"
+             IconColor="Color.Primary"
+             IconSize="Size.Large" />
 
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-0">
-    <MudCard Elevation="1">
-        <MudTable 
-            T="IndividualHealthCheckResponse" 
-            ServerData="LoadData" 
-            Dense="true" 
-            Hover="true" 
-            Bordered="false" 
-            Striped="false" 
-            @ref="_table" 
-            LoadingProgressColor="Color.Primary"
-            RowClassFunc="GetRowClass">
-            <ToolBarContent>
-                <MudFab Color="Color.Surface"
-                        Size="@Size.Small"
-                        StartIcon="@Icons.Material.Filled.Refresh"
-                        Label="Refresh"
-                        OnClick="RefreshAsync" />
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh>Component</MudTh>
-                <MudTh>Description</MudTh>
-                <MudTh>Status</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Component">
-                    <MudStack Direction="Row" Spacing="1">
-                        <MudText Typo="Typo.body1"><b>@context.Component</b></MudText>
-                    </MudStack>
-                </MudTd>
-                <MudTd DataLabel="Description">
-                    <MudText Typo="Typo.body2">@context.Description</MudText>
-                </MudTd>
-                <MudTd DataLabel="Status">
-                    <MudChip T="string" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled" Icon="@GetStatusIcon(context.Status)" Dense="true">
-                        @context.Status
-                    </MudChip>
-                </MudTd>
-            </RowTemplate>
-            <NoRecordsContent>
-                <MudEmptyState Icon="@Icons.Material.Outlined.SearchOff"
-                               Title="No matching records"
-                               Description="Try adjusting your search or refresh the data." />
-            </NoRecordsContent>
-            <LoadingContent>
-                <MudStack Direction="Row" Spacing="2" Class="pa-4">
-                    <MudProgressCircular Color="Color.Primary" />
-                    <MudText>Loading…</MudText>
+
+    <MudTable T="IndividualHealthCheckResponse"
+              ServerData="LoadData"
+              Dense="true"
+              Hover="true"
+              Bordered="false"
+              Striped="false"
+              @ref="_table"
+              LoadingProgressColor="Color.Primary"
+              RowClassFunc="GetRowClass">
+        <ToolBarContent>
+            <MudFab Color="Color.Surface"
+                    Size="@Size.Small"
+                    StartIcon="@Icons.Material.Filled.Refresh"
+                    Label="Refresh"
+                    OnClick="RefreshAsync" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Component</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Status</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Component">
+                <MudStack Direction="Row" Spacing="1">
+                    <MudText Typo="Typo.body1"><b>@context.Component</b></MudText>
                 </MudStack>
-            </LoadingContent>
-        </MudTable>
-    </MudCard>
+            </MudTd>
+            <MudTd DataLabel="Description">
+                <MudText Typo="Typo.body2">@context.Description</MudText>
+            </MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" 
+                    Color="@GetStatusColor(context.Status)" 
+                    Variant="Variant.Filled" 
+                    Size="Size.Small"
+                    Icon="@GetStatusIcon(context.Status)">
+                    @context.Status
+                </MudChip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudPaper Class="d-flex flex-column align-center justify-center pa-6">
+                <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large" />
+                <MudText Typo="Typo.h6" Class="mt-4">No matching records</MudText>
+                <MudText Typo="Typo.body2" Class="gray-text">
+                    Try adjusting your search or refresh the data.
+                </MudText>
+            </MudPaper>
+        </NoRecordsContent>
+        <LoadingContent>
+            <MudStack Direction="Row" Spacing="2" Class="pa-4">
+                <MudProgressCircular Color="Color.Primary" />
+                <MudText>Loading…</MudText>
+            </MudStack>
+        </LoadingContent>
+    </MudTable>
 </MudContainer>
 
 @code {
@@ -84,7 +90,7 @@
     }
 
     private async Task<TableData<IndividualHealthCheckResponse>> LoadData(
-        TableState state, 
+        TableState state,
         CancellationToken cancellationToken)
     {
         try

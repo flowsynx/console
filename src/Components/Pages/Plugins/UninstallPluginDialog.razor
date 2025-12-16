@@ -5,40 +5,80 @@
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Class="mr-3 mb-n1" /> Uninstall plugin
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudText>
-            <strong>Are you sure you want to uninstall this plugin?</strong>
-            <br /><br />
-            <strong>Plugin type:</strong> @PluginType
-            <br /><br />
-            <MudCard Outlined="true" Class="pa-3 mx-auto">
-                <MudText Color="Color.Warning" Typo="Typo.subtitle2">
-                    ⚠️ Warning: Uninstalling this plugin will permanently delete all related data and settings. Additionally, any custom configurations tied to this plugin will become invalid and unusable. As a result, any workflows depending on these invalid configurations or on this plugin directly will fail to execute properly. Please ensure you have backed up any important information before proceeding.
-                </MudText>
-            </MudCard>
-        </MudText>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Outlined" 
-                   StartIcon="@Icons.Material.Filled.Close"
-                   Color="Color.Default"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Cancel">Cancel</MudButton>
+<MudDialog MaxWidth="MaxWidth.Small"
+           FullWidth="true"
+           DisableBackdropClick="@IsProcessing"
+           CloseOnEscapeKey="false">
 
-        <MudButton Color="Color.Error" 
-                   StartIcon="@Icons.Material.Filled.DeleteForever"
-                   Variant="Variant.Filled" 
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Uninstall">@(IsProcessing ? "Uninstalling..." : "Uninstall")</MudButton>
-    </DialogActions>
+    <DialogContent>
+
+        <MudCard Elevation="0" Class="rounded-xl">
+
+            <!-- Body -->
+            <MudCardContent Class="pt-4">
+
+                <MudAlert Severity="Severity.Warning"
+                          Variant="Variant.Filled"
+                          Dense="true"
+                          Class="mb-4">
+                    This action is <strong>permanent</strong> and cannot be undone.
+                </MudAlert>
+
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    You are about to uninstall the following plugin:
+                </MudText>
+
+                <MudChip T="string" Color="Color.Error"
+                         Variant="Variant.Outlined"
+                         Icon="@Icons.Material.Filled.Extension"
+                         Class="mb-4">
+                    @PluginType
+                </MudChip>
+
+                <MudPaper Outlined="true" Class="pa-4 rounded-lg">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">
+                        Please ensure you have backed up any important information before continuing.
+                    </MudText>
+                </MudPaper>
+
+            </MudCardContent>
+
+            <!-- Footer -->
+            <MudDivider />
+
+            <MudCardActions Class="pa-4 d-flex justify-end gap-2">
+
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           Disabled="@IsProcessing"
+                           OnClick="Cancel">
+                    Cancel
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           Disabled="@IsProcessing"
+                           OnClick="Uninstall"
+                           StartIcon="@Icons.Material.Filled.DeleteForever">
+
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Indeterminate="true"
+                                             Size="Size.Small"
+                                             Class="mr-2" />
+                        <span>Uninstalling...</span>
+                    }
+                    else
+                    {
+                        <span>Uninstall Plugin</span>
+                    }
+                </MudButton>
+
+            </MudCardActions>
+
+        </MudCard>
+
+    </DialogContent>
 </MudDialog>
 
 @code {

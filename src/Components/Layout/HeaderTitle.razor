@@ -2,26 +2,25 @@
 
 <MudStack Row="true"
           Spacing="2"
-          AlignItems="AlignItems.Baseline"
           Class="@CombineClass("mb-6")">
 
     @if (!string.IsNullOrWhiteSpace(Icon))
     {
-        <MudAvatar Size="Size.Medium"
+        <MudAvatar Size="Size.Large"
                    Color="@IconColor"
                    Variant="Variant.Filled">
-            <MudIcon Icon="@Icon" />
+            <MudIcon Size="Size.Large" Icon="@Icon" />
         </MudAvatar>
     }
 
-    <MudStack Direction="Column" Spacing="1" AlignItems="AlignItems.Baseline">
+    <MudStack Direction="Column" Spacing="0" AlignItems="AlignItems.Baseline">
         <MudText Typo="Typo.h5" Class="font-weight-medium">
             @Title
         </MudText>
 
         @if (!string.IsNullOrWhiteSpace(Description))
         {
-            <MudText Typo="Typo.body2" Style="@($"color:{Colors.Gray.Default};")">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
                 @Description
             </MudText>
         }

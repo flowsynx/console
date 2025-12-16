@@ -5,7 +5,7 @@
 @inject IJSRuntime JSRuntime
 @inject IDialogService DialogService
 
-<div class="designer-root modern">
+<MudPaper Class="designer-root" Elevation="0">
     <!-- Floating Palette Drawer -->
     <MudDrawer Open="@IsPaletteVisible"
                Anchor="Anchor.Right"
@@ -15,7 +15,7 @@
                Width="400px"
                Class="palette-drawer glass">
 
-        <MudStack Class="pa-4" Spacing="2">
+        <MudStack Class="pa-4" Spacing="1">
             <MudStack Row AlignItems="AlignItems.Center">
                 <MudIcon Icon="@Icons.Material.Filled.Extension" Size="Size.Medium" Color="Color.Primary" />
                 <MudText Typo="Typo.h6" Class="ml-2">Plugins</MudText>
@@ -26,7 +26,7 @@
                                OnClick="TogglePalette" />
             </MudStack>
 
-            <MudText Typo="Typo.caption" Style="@($"color:{Colors.Gray.Default};")">
+            <MudText Typo="Typo.caption" Class="gray-text">
                 Click or drag to add nodes
             </MudText>
 
@@ -35,7 +35,7 @@
     </MudDrawer>
 
     <!-- Canvas -->
-    <div class="canvas-wrap">
+    <MudPaper Class="canvas-wrap">
         <MudPaper Class="canvas-appbar" Elevation="0">
             <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
                 <MudTooltip Text="Add plugin">
@@ -55,7 +55,7 @@
                                  Color="Color.Default"
                                  Variant="Variant.Outlined"
                                  Size="Size.Large"
-                                 Icon="@Icons.Material.Filled.AccountTree"
+                                 Icon="@Icons.Material.Filled.Info"
                                  OnClick="() => ShowPropertiesDialog(SelectedTask)">
                             Selected Task: <b>@SelectedTask.Name</b>
                         </MudChip>
@@ -64,7 +64,7 @@
 
                 <MudSpacer />
 
-                <MudPaper class="zoom-controls" Elevation="4">
+                <MudPaper Class="zoom-controls" Elevation="4">
                     <MudIconButton Icon="@Icons.Material.Filled.CenterFocusStrong"
                                    Size="Size.Medium"
                                    Variant="Variant.Text"
@@ -77,9 +77,9 @@
             </MudStack>
         </MudPaper>
 
-        <div id="drawflow" style="height:100%;"></div>
-    </div>
-</div>
+        <MudPaper id="drawflow"></MudPaper>
+    </MudPaper>
+</MudPaper>
 
 @code {
     [Parameter] public WorkflowContainer WorkflowContainer { get; set; }

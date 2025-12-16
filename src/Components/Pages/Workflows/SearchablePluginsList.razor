@@ -30,9 +30,9 @@
         {
             <!-- Empty state -->
             <MudPaper Class="pa-6 text-center rounded-xl" Elevation="0">
-                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Style="@($"color:{Colors.Gray.Default};")" />
+                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="gray-text" />
                 <MudText Typo="Typo.subtitle1" Class="mt-2">No plugins found</MudText>
-                <MudText Typo="Typo.body2" Style="@($"color:{Colors.Gray.Default};")">
+                <MudText Typo="Typo.body2" Class="gray-text">
                     Try adjusting your search
                 </MudText>
             </MudPaper>
@@ -50,7 +50,7 @@
                                     @item.Type
                                     <br />
                                     <MudText Typo="Typo.subtitle2"
-                                             Style="@($"color:{Colors.Gray.Default};")">
+                                             Class="gray-text">
                                         @item.Versions.Count version(s)
                                     </MudText>
                                 </MudText>
@@ -74,7 +74,7 @@
                                 @if (!string.IsNullOrWhiteSpace(item.Description))
                                 {
                                     <MudText Typo="Typo.body2"
-                                             Style="@($"color:{Colors.Gray.Default};")">
+                                             Class="gray-text">
                                         @item.Description
                                     </MudText>
                                 }
