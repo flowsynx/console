@@ -65,7 +65,7 @@
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Color="Color.Error"
                                        Size="@Size.Small"
-                                       OnClick="@(() => UninstallPlugin(@context.Type, @context.Version))" />
+                                       OnClick="@(() => UninstallPlugin(@context.Type, @context.Version, @context.Description))" />
                     </MudTooltip>
                 </MudToolBar>
             </div>
@@ -167,7 +167,7 @@
             await Refresh();
     }
 
-    private async Task UninstallPlugin(string type, string version)
+    private async Task UninstallPlugin(string type, string version, string? description)
     {
         var options = new DialogOptions
             {
@@ -179,7 +179,8 @@
             };
 
         var parameters = new DialogParameters {
-            { "PluginType", $"{type}:{version}" }
+            { "PluginType", $"{type}:{version}" },
+            { "PluginDescription", description }
         };
 
         var dialog = await DialogService.ShowAsync<UninstallPluginDialog>("Uninstall plugin", parameters, options);

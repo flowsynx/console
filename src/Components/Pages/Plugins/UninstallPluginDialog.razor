@@ -18,27 +18,44 @@
             <MudCardContent Class="pt-4">
 
                 <MudAlert Severity="Severity.Warning"
-                          Variant="Variant.Filled"
+                          Variant="Variant.Outlined"
                           Dense="true"
                           Class="mb-4">
-                    This action is <strong>permanent</strong> and cannot be undone.
+                    <MudText Typo="Typo.body1"><b>This action is permanent and cannot be undone.</b></MudText>
+                    <MudText Typo="Typo.subtitle2">Ensure you have backed up any important information before continuing.</MudText>
                 </MudAlert>
 
-                <MudText Typo="Typo.body2" Class="mb-2">
-                    You are about to uninstall the following plugin:
-                </MudText>
+                <!-- Plugin identity -->
+                <MudPaper Outlined="true" Class="pa-4 rounded-lg mb-4">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">
+                        You are about to uninstall the following plugin:
+                    </MudText>
 
-                <MudChip T="string" Color="Color.Error"
-                         Variant="Variant.Outlined"
-                         Icon="@Icons.Material.Filled.Extension"
-                         Class="mb-4">
-                    @PluginType
-                </MudChip>
+                    <MudText Typo="Typo.h6">@PluginType</MudText>
+
+                    @if (!string.IsNullOrWhiteSpace(PluginDescription))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                            @PluginDescription
+                        </MudText>
+                    }
+                </MudPaper>
 
                 <MudPaper Outlined="true" Class="pa-4 rounded-lg">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">
-                        Please ensure you have backed up any important information before continuing.
+                    <MudText Typo="Typo.subtitle2" Color="Color.Warning">
+                        <b>⚠️ What will be removed?</b>
                     </MudText>
+
+                    <MudList T="string" Dense="true" Gutters="false" ReadOnly="true">
+                        <MudListItem>
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Secondary" Class="mr-2" />
+                            All plugin data and settings will be permanently removed
+                        </MudListItem>
+                        <MudListItem>
+                            <MudIcon Icon="@Icons.Material.Filled.AccountTree" Color="Color.Secondary" Class="mr-2" />
+                            Dependent workflows may fail to execute
+                        </MudListItem>
+                    </MudList>
                 </MudPaper>
 
             </MudCardContent>
@@ -87,6 +104,9 @@
 
     [Parameter]
     public string PluginType { get; set; } = "";
+
+    [Parameter]
+    public string? PluginDescription { get; set; } = "";
 
     private bool IsProcessing = false;
 
