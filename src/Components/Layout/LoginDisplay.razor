@@ -3,12 +3,14 @@
 <AuthorizeView>
     <Authorized>
         <MudMenu StartIcon="@Icons.Material.Filled.AccountCircle"
+                 EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
                  Color="Color.Inherit"
-                 Variant="Variant.Outlined"
+                 Variant="Variant.Text"
                  Label="@context.User.Identity?.Name"
                  AnchorOrigin="Origin.BottomRight"
                  TransformOrigin="Origin.TopRight"
-                 Class="ml-2 mr-2">
+                 Dense="true"
+                 Class="ml-4 mr-1 account-menu">
             <MudMenuItem OnClick="Logout">Log out</MudMenuItem>
         </MudMenu>
     </Authorized>

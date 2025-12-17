@@ -8,93 +8,149 @@
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" /> Add workflow trigger
-        </MudText>
-    </TitleContent>
+<MudDialog MaxWidth="MaxWidth.Medium"
+           FullWidth="true"
+           DisableBackdropClick="@IsProcessing"
+           CloseOnEscapeKey="false">
+
     <DialogContent>
-        <MudGrid>
-            <MudItem xs="12" md="12">
-                <MudSelect T="string"
-                           Label="Trigger Type"
-                           For="@(() => AddWorkflowTriggerRequest.Type)"
-                           @bind-Value="AddWorkflowTriggerRequest.Type"
-                           Variant="Variant.Text"
-                           Margin="Margin.Dense"
-                           Clearable="false"
-                           OpenIcon="@Icons.Material.Filled.ArrowDropDown"
-                           CloseIcon="@Icons.Material.Filled.ArrowDropUp"
-                           HelperText="Enter the type of workflow trigger">
-                    @foreach (var triggerType in Enum.GetValues<WorkflowTriggerType>())
-                    {
-                        <MudSelectItem Value="@triggerType.ToString().ToLower()">@triggerType</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12">
-                <MudSwitch @bind-Value="AddWorkflowTriggerRequest.Status"
-                           Converter="_statusConverter"
-                           Label="Active"
-                           Color="Color.Primary" />
-            </MudItem>
-            <MudItem xs="12" md="12">
-                <MudText Typo="Typo.h6" Color="Color.Primary">Properties</MudText>
-                <MudTable Items="Properties" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+
+        <MudCard Elevation="0" Class="rounded-xl">
+
+            <!-- Body -->
+            <MudCardContent Class="pt-4">
+
+                <!-- Trigger basics -->
+                <MudGrid Spacing="3">
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Trigger Type"
+                                   @bind-Value="AddWorkflowTriggerRequest.Type"
+                                   Variant="Variant.Filled"
+                                   StartIcon="@Icons.Material.Filled.Category"
+                                   Disabled="@IsProcessing">
+                            @foreach (var triggerType in Enum.GetValues<WorkflowTriggerType>())
+                            {
+                                <MudSelectItem Value="@triggerType.ToString()">
+                                    @triggerType
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6" Class="d-flex align-center">
+                        <MudSwitch @bind-Value="AddWorkflowTriggerRequest.Status"
+                                   Converter="_statusConverter"
+                                   Color="Color.Primary"
+                                   Label="Trigger Active"
+                                   Disabled="@IsProcessing" />
+                    </MudItem>
+
+                </MudGrid>
+
+                <MudDivider Class="my-4" />
+
+                <!-- Properties -->
+                <MudText Typo="Typo.h6" Class="mb-2">
+                    Trigger Properties
+                </MudText>
+
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    Define key–value parameters used by the trigger.
+                </MudText>
+
+                <MudTable Items="Properties"
+                          Dense="true"
+                          Hover="true"
+                          Breakpoint="Breakpoint.Sm">
+
                     <ToolBarContent>
-                        <MudButton DisableElevation
-                                   Variant="Variant.Outlined"
-                                   Color="Color.Default"
-                                   Size="@Size.Small"
-                                   Class="size-small-button"
-                                   OnClick="AddProperty">Add properties</MudButton>
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   Disabled="@IsProcessing"
+                                   OnClick="AddProperty">
+                            Add Property
+                        </MudButton>
                     </ToolBarContent>
+
                     <HeaderContent>
                         <MudTh>Key</MudTh>
                         <MudTh>Value</MudTh>
                         <MudTh></MudTh>
                     </HeaderContent>
+
                     <RowTemplate>
                         <MudTd>
-                            <MudTextField For="@(() => context.Key)"
-                                          @bind-Value="context.Key"
-                                          Variant="Variant.Text"
-                                          Margin="Margin.Dense" />
+                            <MudTextField @bind-Value="context.Key"
+                                          Variant="Variant.Filled"
+                                          Placeholder="Key"
+                                          Margin="Margin.Dense"
+                                          Disabled="@IsProcessing" />
                         </MudTd>
+
                         <MudTd>
-                            <MudTextField For="@(() => context.Value)"
-                                          @bind-Value="context.Value"
-                                          Variant="Variant.Text"
-                                          Margin="Margin.Dense" />
+                            <MudTextField @bind-Value="context.Value"
+                                          Variant="Variant.Filled"
+                                          Placeholder="Value"
+                                          Margin="Margin.Dense"
+                                          Disabled="@IsProcessing" />
                         </MudTd>
+
                         <MudTd>
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                           Variant="Variant.Text"
                                            Color="Color.Error"
-                                           Size="Size.Small"
-                                           OnClick="@(() => DeleteProperty(context.Id))"></MudIconButton>
+                                           Disabled="@IsProcessing"
+                                           OnClick="@(() => DeleteProperty(context.Id))" />
                         </MudTd>
                     </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText>No properties defined.</MudText>
+                    </NoRecordsContent>
+                    <LoadingContent>
+                        <MudText>Loading...</MudText>
+                    </LoadingContent>
                 </MudTable>
-            </MudItem>
-        </MudGrid>
-    </DialogContent>
-    <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Outlined"
-                   StartIcon="@Icons.Material.Filled.Close"
-                   Color="Color.Default"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Cancel">Cancel</MudButton>
 
-        <MudButton DisableElevation Variant="Variant.Filled"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   Color="Color.Primary"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Add">@(IsProcessing ? "Adding..." : "Add")</MudButton>
-    </DialogActions>
+            </MudCardContent>
+
+            <!-- Footer -->
+            <MudDivider />
+
+            <MudCardActions Class="pa-4 d-flex justify-end gap-2">
+
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           Disabled="@IsProcessing"
+                           OnClick="Cancel">
+                    Cancel
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@IsProcessing"
+                           OnClick="Add"
+                           StartIcon="@Icons.Material.Filled.Add">
+
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Indeterminate="true"
+                                             Size="Size.Small"
+                                             Class="mr-2" />
+                        <span>Adding…</span>
+                    }
+                    else
+                    {
+                        <span>Add Trigger</span>
+                    }
+                </MudButton>
+
+            </MudCardActions>
+
+        </MudCard>
+
+    </DialogContent>
 </MudDialog>
 
 @code {
@@ -107,20 +163,20 @@
     private bool IsProcessing = false;
     private List<TempKeyValue> Properties = new List<TempKeyValue>();
     private AddWorkflowTriggerRequest AddWorkflowTriggerRequest = new()
-        {
-            WorkflowId = Guid.Empty,
-            Status = WorkflowTriggerStatus.Active.ToString(),
-            Type = WorkflowTriggerType.TimeBased.ToString(),
-            Properties = new()
-        };
+    {
+        WorkflowId = Guid.Empty,
+        Status = WorkflowTriggerStatus.Active.ToString(),
+        Type = WorkflowTriggerType.Time.ToString(),
+        Properties = new()
+    };
 
     private readonly MudBlazor.Converter<string, bool?> _statusConverter = new()
-        {
-            SetFunc = status => status == WorkflowTriggerStatus.Active.ToString(),
-            GetFunc = isActive => isActive == true ? 
-                                              WorkflowTriggerStatus.Active.ToString() : 
-                                              WorkflowTriggerStatus.DeActive.ToString()
-        };
+    {
+        SetFunc = status => status == WorkflowTriggerStatus.Active.ToString(),
+        GetFunc = isActive => isActive == true ?
+                                          WorkflowTriggerStatus.Active.ToString() :
+                                          WorkflowTriggerStatus.DeActive.ToString()
+    };
 
     private void Cancel()
     {
@@ -224,7 +280,7 @@
 
     private enum WorkflowTriggerType
     {
-        TimeBased
+        Time
     }
 
     private enum WorkflowTriggerStatus

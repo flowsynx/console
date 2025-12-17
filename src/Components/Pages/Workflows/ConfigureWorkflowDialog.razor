@@ -7,151 +7,205 @@
 @inject IFlowSynxClient FlowSynxClient
 @inject ISnackbar SnackBar
 
-<MudDialog>
+<MudDialog MaxWidth="MaxWidth.Medium"
+           FullWidth
+           DisableBackdropClick="@IsProcessing"
+           CloseOnEscapeKey="false">
+
     <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" /> Workflow Configuration
+        <MudText Typo="Typo.h6">Workflow Configuration</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Define execution behavior and error handling
         </MudText>
     </TitleContent>
 
     <DialogContent>
-        <MudGrid>
-            <MudItem xs="12" sm="12">
-                <MudTextField T="string" For="@(() => Config.Schema)"
-                              @bind-Value="Config.Schema"
-                              Label="Workflow Schema"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense" />
-            </MudItem>
 
-            <MudItem xs="12" sm="12">
-                <MudTextField T="string" For="@(() => Config.Name)"
-                              @bind-Value="Config.Name"
-                              Label="Workflow name"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
-                              Required="true" />
-            </MudItem>
+        <MudCard Elevation="0" Class="rounded-2xl">
 
-            <MudItem xs="12" sm="12">
-                <MudTextField T="string" For="@(() => Config.Description)"
-                              @bind-Value="Config.Description"
-                              Label="Workflow description"
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
-                              Lines="3" />
-            </MudItem>
+            <!-- Tabs -->
+            <MudTabs Rounded="true"
+                     Outlined="true"
+                     Border="true"
+                     ApplyEffectsToContainer="true"
+                     Centered="false"
+                     Elevation="0"
+                     Class="mb-4"
+                     PanelClass="pa-6">
 
-            <MudItem xs="12" sm="6">
-                <MudNumericField T="int?" For="@(() => Config.Configuration.TimeoutMilliseconds)"
-                                 @bind-Value="Config.Configuration.TimeoutMilliseconds"
-                                 Label="Timeout (ms)"
-                                 Required="true"
-                                 Variant="Variant.Text"
-                                 Margin="Margin.Dense"
-                                 HelperText="Workflow timeout in milliseconds" />
-            </MudItem>
+                <!-- GENERAL -->
+                <MudTabPanel Text="General" Icon="@Icons.Material.Filled.Settings">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          @bind-Value="Config.Schema"
+                                          Label="Workflow Schema"
+                                          Placeholder="https://schema.flowsynx.io/workflows/v1.2.0/schema.flat.json"
+                                          Variant="Variant.Filled"
+                                          Margin="Margin.Dense"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Link"
+                                          HelperText="Schema URL to provide a structured and consistent way to define workflow" />
+                        </MudItem>
 
-            <!-- ErrorHandling Section -->
-            <MudItem xs="12">
-                <MudExpansionPanels Elevation="0" MultiExpansion="true"
-                                    Dense="true"
-                                    Outlined="false"
-                                    Class="exp-panels-bordered">
-                    <MudExpansionPanel Text="Error Handling">
-                        <MudGrid>
-                            <MudItem xs="12" sm="6">
-                                <MudSelect T="string" For="@(() => Config.Configuration.ErrorHandling!.Strategy)"
-                                           Label="Select Status"
-                                           Variant="Variant.Text"
-                                           Margin="Margin.Dense"
-                                           Clearable="false"
-                                           OpenIcon="@Icons.Material.Filled.ArrowDropDown"
-                                           CloseIcon="@Icons.Material.Filled.ArrowDropUp"
-                                           @bind-Value="Config.Configuration.ErrorHandling!.Strategy">
-                                    @foreach (var strategy in Enum.GetValues<ErrorStrategy>())
-                                    {
-                                        <MudSelectItem Value="@strategy.ToString().ToLower()">@strategy</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-                        </MudGrid>
-                    </MudExpansionPanel>
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          @bind-Value="Config.Name"
+                                          Label="Workflow Name"
+                                          Required
+                                          Variant="Variant.Filled"
+                                          Margin="Margin.Dense"
+                                          HelperText="Name of the workflow"/>
+                        </MudItem>
 
-                    <!-- RetryPolicy Section -->
-                    <MudExpansionPanel Text="Retry Policy">
-                        <MudGrid>
-                            <MudItem xs="12" sm="6">
-                                <MudNumericField T="int"
-                                                 For="@(() =>           Config.Configuration.ErrorHandling!.RetryPolicy!.MaxRetries)"
-                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxRetries"
-                                                 Label="Max Retries"
-                                                 Variant="Variant.Text"
-                                                 Margin="Margin.Dense" />
-                            </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField T="string"
+                                          @bind-Value="Config.Description"
+                                          Label="Description"
+                                          Lines="3"
+                                          Variant="Variant.Filled"
+                                          Margin="Margin.Dense"
+                                          HelperText="Description of the workflow" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
 
-                            <MudItem xs="12" sm="6">
-                                <MudSelect T="string" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy)"
-                                           Label="Backoff Strategy"
-                                           Variant="Variant.Text"
-                                           Margin="Margin.Dense"
-                                           Clearable="false"
-                                           OpenIcon="@Icons.Material.Filled.ArrowDropDown"
-                                           CloseIcon="@Icons.Material.Filled.ArrowDropUp"
-                                           @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy">
-                                    @foreach (var strategy in Enum.GetValues<BackoffStrategy>())
-                                    {
-                                        <MudSelectItem Value="@strategy.ToString().ToLower()">@strategy</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
+                <!-- EXECUTION -->
+                <MudTabPanel Text="Execution" Icon="@Icons.Material.Filled.PlayArrow">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="int?"
+                                             @bind-Value="Config.Configuration.DegreeOfParallelism"
+                                             Label="Degree of Parallelism"
+                                             Required
+                                             Variant="Variant.Filled"
+                                             Margin="Margin.Dense"
+                                             HelperText="Maximum degree of parallelism" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="int?"
+                                             @bind-Value="Config.Configuration.TimeoutMilliseconds"
+                                             Label="Timeout (ms)"
+                                             Required
+                                             Variant="Variant.Filled"
+                                             Margin="Margin.Dense"
+                                             HelperText="Maximum workflow execution time" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
 
-                            <MudItem xs="12" sm="6">
-                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelayMilliseconds)"
-                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelayMilliseconds"
-                                                 Label="Initial Delay (ms)"
-                                                 Variant="Variant.Text"
-                                                 Margin="Margin.Dense" />
-                            </MudItem>
+                <!-- ERROR HANDLING -->
+                <MudTabPanel Text="Error Handling" Icon="@Icons.Material.Filled.WarningAmber">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" sm="6">
+                            <MudSelect T="string"
+                                       @bind-Value="Config.Configuration.ErrorHandling!.Strategy"
+                                       Label="Strategy"
+                                       Variant="Variant.Filled"
+                                       Margin="Margin.Dense"
+                                       HelperText="Select the error handling strategy">
+                                @foreach (var strategy in Enum.GetValues<ErrorStrategy>())
+                                {
+                                    <MudSelectItem Value="@strategy.ToString().ToLower()">
+                                        @strategy
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
 
-                            <MudItem xs="12" sm="6">
-                                <MudNumericField T="int" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelayMilliseconds)"
-                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelayMilliseconds"
-                                                 Label="Max Delay (ms)"
-                                                 Variant="Variant.Text"
-                                                 Margin="Margin.Dense" />
-                            </MudItem>
+                <!-- RETRY POLICY -->
+                <MudTabPanel Text="Retry Policy" Icon="@Icons.Material.Filled.Refresh">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="int"
+                                             @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxRetries"
+                                             Label="Max Retries"
+                                             Variant="Variant.Filled"
+                                             Margin="Margin.Dense"
+                                             HelperText="Maximum number of retry attempts"/>
+                        </MudItem>
 
-                            <MudItem xs="12" sm="6">
-                                <MudNumericField T="double" For="@(() => Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffCoefficient)"
-                                                 @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffCoefficient"
-                                                 Label="Backoff Coefficient"
-                                                 Variant="Variant.Text"
-                                                 Margin="Margin.Dense" />
-                            </MudItem>
-                        </MudGrid>
-                    </MudExpansionPanel>
-                </MudExpansionPanels>
-            </MudItem>
-        </MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudSelect T="string"
+                                       @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffStrategy"
+                                       Label="Backoff Strategy"
+                                       Variant="Variant.Filled"
+                                       Margin="Margin.Dense"
+                                       HelperText="Select the backoff strategy">
+                                @foreach (var strategy in Enum.GetValues<BackoffStrategy>())
+                                {
+                                    <MudSelectItem Value="@strategy.ToString().ToLower()">
+                                        @strategy
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="int"
+                                             @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.InitialDelayMilliseconds"
+                                             Label="Initial Delay (ms)"
+                                             Variant="Variant.Filled"
+                                             Margin="Margin.Dense"
+                                             HelperText="Initial delay before the first retry"/>
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="int"
+                                             @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.MaxDelayMilliseconds"
+                                             Label="Max Delay (ms)"
+                                             Variant="Variant.Filled"
+                                             Margin="Margin.Dense"
+                                             HelperText="Maximum delay between retries"/>
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="double"
+                                             @bind-Value="Config.Configuration.ErrorHandling!.RetryPolicy!.BackoffCoefficient"
+                                             Label="Backoff Coefficient"
+                                             Variant="Variant.Filled"
+                                             Margin="Margin.Dense"
+                                             HelperText="Backoff coefficient for retry delays" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+            </MudTabs>
+
+            <!-- Footer -->
+            <MudDivider />
+
+            <MudCardActions Class="pa-4 d-flex justify-end gap-3">
+                <MudButton Variant="Variant.Text"
+                           Disabled="@IsProcessing"
+                           OnClick="Cancel">
+                    Cancel
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@IsProcessing"
+                           OnClick="Save"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Indeterminate Size="Size.Small" Class="mr-2" />
+                        <span>Saving…</span>
+                    }
+                    else
+                    {
+                        <span>Save Configuration</span>
+                    }
+                </MudButton>
+            </MudCardActions>
+
+        </MudCard>
+
     </DialogContent>
-
-    <DialogActions>
-        <MudButton Variant="Variant.Outlined"
-                   StartIcon="@Icons.Material.Filled.Close"
-                   Color="Color.Default"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Cancel">Cancel</MudButton>
-
-        <MudButton Variant="Variant.Filled"
-                   StartIcon="@Icons.Material.Filled.Save"
-                   Color="Color.Primary"
-                   Disabled="@IsProcessing"
-                   OnClick="Save"
-                   Size="Size.Small">@(IsProcessing ? "Saving..." : "Save")</MudButton>
-    </DialogActions>
 </MudDialog>
+
 
 @code {
     [CascadingParameter]
