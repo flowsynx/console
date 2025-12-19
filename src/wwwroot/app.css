@@ -229,3 +229,22 @@ h1:focus {
     .account-menu.mud-menu-item-selected {
         border-color: color-mix(in srgb, var(--mud-palette-background) 60%, var(--mud-palette-primary));
     }
+
+.dialog-with-fixed-footer {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* or 100% if using FullScreen */
+}
+
+.dialog-scroll-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+.dialog-fixed-footer {
+    position: sticky;
+    bottom: 0;
+    background-color: var(--mud-palette-surface);
+    z-index: 2;
+    border-top: 1px solid var(--mud-palette-divider);
+}

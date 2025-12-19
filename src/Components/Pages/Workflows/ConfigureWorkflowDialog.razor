@@ -62,10 +62,10 @@
                             <MudTextField T="string"
                                           @bind-Value="Config.Description"
                                           Label="Description"
+                                          Placeholder="Enter task description"
+                                          HelperText="Description of the workflow"
                                           Lines="3"
-                                          Variant="Variant.Filled"
-                                          Margin="Margin.Dense"
-                                          HelperText="Description of the workflow" />
+                                          Variant="Variant.Filled" />
                         </MudItem>
                     </MudGrid>
                 </MudTabPanel>
@@ -97,21 +97,34 @@
                 <!-- ERROR HANDLING -->
                 <MudTabPanel Text="Error Handling" Icon="@Icons.Material.Filled.WarningAmber">
                     <MudGrid Spacing="3">
-                        <MudItem xs="12" sm="6">
-                            <MudSelect T="string"
-                                       @bind-Value="Config.Configuration.ErrorHandling!.Strategy"
-                                       Label="Strategy"
-                                       Variant="Variant.Filled"
-                                       Margin="Margin.Dense"
-                                       HelperText="Select the error handling strategy">
-                                @foreach (var strategy in Enum.GetValues<ErrorStrategy>())
-                                {
-                                    <MudSelectItem Value="@strategy.ToString().ToLower()">
-                                        @strategy
-                                    </MudSelectItem>
-                                }
-                            </MudSelect>
-                        </MudItem>
+                        @if (Config?.Configuration.ErrorHandling != null)
+                        {
+                            <MudItem xs="6">
+                                <MudSelect @bind-Value="Config.Configuration.ErrorHandling.Strategy"
+                                           Variant="Variant.Filled"
+                                           Placeholder="Select error strategy"
+                                           HelperText="Select the strategy to handle errors"
+                                           Label="Error Strategy">
+                                    @foreach (var strategy in Enum.GetValues<ErrorStrategy>())
+                                    {
+                                        <MudSelectItem Value="@strategy.ToString().ToLower()">
+                                            @strategy
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            @if (Config?.Configuration.ErrorHandling?.Strategy?.ToLower() == "triggertask")
+                            {
+                                <MudItem xs="6">
+                                    <MudTextField @bind-Value="Config.Configuration?.ErrorHandling?.TriggerPolicy!.TaskName"
+                                                  Label="Trigger Task Name"
+                                                  Placeholder="Enter task name to trigger"
+                                                  HelperText="The name of the task to trigger on error"
+                                                  Variant="Variant.Filled" />
+                                </MudItem>
+                            }
+                        }
                     </MudGrid>
                 </MudTabPanel>
 
@@ -223,6 +236,16 @@
         Config.Configuration.ErrorHandling ??= new ErrorHandling();
         Config.Configuration.ErrorHandling.RetryPolicy ??= new RetryPolicy();
 
+        Config.Configuration.ErrorHandling ??= new ErrorHandling()
+        {
+            Strategy = ErrorStrategy.Abort.ToString().ToLower()
+        };
+
+        Config.Configuration.ErrorHandling.TriggerPolicy ??= new TriggerPolicy
+        {
+            TaskName = string.Empty
+        };
+
         if (!string.IsNullOrWhiteSpace(Config.Configuration.ErrorHandling.Strategy))
         {
             Config.Configuration.ErrorHandling.Strategy = Config.Configuration.ErrorHandling.Strategy.ToLower();
@@ -255,7 +278,8 @@
     {
         Retry,
         Skip,
-        Abort
+        Abort,
+        TriggerTask
     }
 
     public enum BackoffStrategy

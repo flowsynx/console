@@ -55,7 +55,7 @@ public class ExecutionConfig
     public string Operation { get; set; } = string.Empty;
     public Dictionary<string, object?> Specification { get; set; } = new();
     public Dictionary<string, object?> Parameters { get; set; } = new();
-    public AgentConfiguration? Agent { get; set; }
+    public AgentConfiguration? Agent { get; set; } = new();
     public int? TimeoutMilliseconds { get; set; }
 }
 
@@ -67,8 +67,8 @@ public class AgentConfiguration
     public int MaxIterations { get; set; } = 3;
     public double Temperature { get; set; } = 0.2;
     public Dictionary<string, object>? Context { get; set; } = new();
-    public List<string>? AllowTools { get; set; } = new();
-    public List<string>? DenyTools { get; set; } = new();
+    public IEnumerable<string>? AllowTools { get; set; } = new List<string>();
+    public IEnumerable<string>? DenyTools { get; set; } = new List<string>();
     public int MaxToolCalls { get; set; } = 6;
     public bool RequireToolApproval { get; set; }
     public bool DryRun { get; set; }
@@ -79,7 +79,7 @@ public class FlowControlConfig
 {
     public List<string> Dependencies { get; set; } = new();
     public List<string> RunOnFailureOf { get; set; } = new();
-    public Condition? ExecutionCondition { get; set; }
+    public Condition? ExecutionCondition { get; set; } = new();
     public List<ConditionalBranch> ConditionalBranches { get; set; } = new();
 }
 
@@ -116,8 +116,8 @@ public class WorkflowTaskPosition
 public class ErrorHandling
 {
     public string? Strategy { get; set; }
-    public TriggerPolicy? TriggerPolicy { get; set; }
-    public RetryPolicy? RetryPolicy { get; set; }
+    public TriggerPolicy? TriggerPolicy { get; set; } = new();
+    public RetryPolicy? RetryPolicy { get; set; } = new();
 }
 
 public class TriggerPolicy

@@ -11,8 +11,14 @@
            DisableBackdropClick="@IsProcessing"
            CloseOnEscapeKey="false">
 
-    <DialogContent>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Update Plugin</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Update the plugin to a new version
+        </MudText>
+    </TitleContent>
 
+    <DialogContent>
         <MudCard Elevation="0" Class="rounded-xl">
 
             <!-- Body -->
@@ -29,7 +35,8 @@
                               StartIcon="@Icons.Material.Filled.Extension"
                               ReadOnly="true"
                               Disabled="true"
-                              Class="mb-4" />
+                              Class="mb-4"
+                              HelperText="Current installed version"/>
 
                 <!-- Target version -->
                 <MudTextField @bind-Value="UpdateModel.TargetVersion"

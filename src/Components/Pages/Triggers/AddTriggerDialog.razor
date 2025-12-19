@@ -13,6 +13,13 @@
            DisableBackdropClick="@IsProcessing"
            CloseOnEscapeKey="false">
 
+    <TitleContent>
+        <MudText Typo="Typo.h6">Add Trigger</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Configure the settings for this workflow trigger.
+        </MudText>
+    </TitleContent>
+
     <DialogContent>
 
         <MudCard Elevation="0" Class="rounded-xl">
@@ -23,12 +30,13 @@
                 <!-- Trigger basics -->
                 <MudGrid Spacing="3">
 
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12">
                         <MudSelect T="string"
                                    Label="Trigger Type"
                                    @bind-Value="AddWorkflowTriggerRequest.Type"
                                    Variant="Variant.Filled"
-                                   StartIcon="@Icons.Material.Filled.Category"
+                                   Placeholder="Select Trigger Type"
+                                   HelperText="Select the type of trigger for this workflow."
                                    Disabled="@IsProcessing">
                             @foreach (var triggerType in Enum.GetValues<WorkflowTriggerType>())
                             {
@@ -39,7 +47,7 @@
                         </MudSelect>
                     </MudItem>
 
-                    <MudItem xs="12" md="6" Class="d-flex align-center">
+                    <MudItem xs="12" Class="d-flex align-center">
                         <MudSwitch @bind-Value="AddWorkflowTriggerRequest.Status"
                                    Converter="_statusConverter"
                                    Color="Color.Primary"

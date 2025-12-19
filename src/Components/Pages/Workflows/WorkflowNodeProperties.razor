@@ -1,111 +1,549 @@
 ﻿@using MudBlazor
+@using System.Text.Json
+@inject IToolRegistry ToolRegistry
 
-<MudDialog>
+<MudDialog MaxWidth="MaxWidth.Large"
+           FullWidth
+           DisableBackdropClick="@IsProcessing"
+           CloseOnEscapeKey="false">
+
     <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" /> Properties
+        <MudText Typo="Typo.h6">Task properties</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Configure the properties of the selected workflow task.
         </MudText>
     </TitleContent>
+
     <DialogContent>
-        @if (SelectedTask != null)
-        {
-            <MudGrid>
-                <MudItem xs="12" md="12">
-                    <MudTextField T="string" For="@(() => SelectedTask.Name)"
-                                  @bind-Value="SelectedTask.Name"
-                                  Label="Task name"
-                                  Variant="Variant.Text"
-                                  Margin="Margin.Dense"
-                                  Immediate="true"
-                                  Required="true" />
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudTextField For="@(() => SelectedTask.Type)"
-                                  @bind-Value="SelectedTask.Type"
-                                  Label="Task type"
-                                  Variant="Variant.Text"
-                                  Margin="Margin.Dense"
-                                  Immediate="true"
-                                  Disabled="true" />
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudTextField For="@(() => dependencies)"
-                                  @bind-Value="dependencies"
-                                  Label="Dependencies (comma separated)"
-                                  Variant="Variant.Text"
-                                  Margin="Margin.Dense"
-                                  Immediate="true"
-                                  OnBlur="UpdateDepsFromText" />
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudText Typo="Typo.h6" Color="Color.Primary">Parameters</MudText>
-                    @if (SelectedTask.Execution.Parameters == null || SelectedTask.Execution.Parameters.Count <= 0)
+        <MudCard Elevation="0" Class="rounded-2xl">
+
+            <MudTabs Rounded="true"
+                     Outlined="true"
+                     Border="true"
+                     ApplyEffectsToContainer="true"
+                     Centered="false"
+                     Elevation="0"
+                     Class="mb-4"
+                     PanelClass="pa-6">
+
+                <!-- ================= GENERAL ================= -->
+                <MudTabPanel Text="General" Icon="@Icons.Material.Filled.Settings">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="SelectedTask.Name"
+                                          Label="Task Name"
+                                          Placeholder="Enter task name"
+                                          HelperText="The name of the task"
+                                          Required Variant="Variant.Filled" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="SelectedTask.Description"
+                                          Label="Description"
+                                          Placeholder="Enter task description"
+                                          HelperText="The description of the task"
+                                          Lines="3"
+                                          Variant="Variant.Filled" />
+                        </MudItem>
+
+                        <MudItem xs="6">
+                            <MudNumericField @bind-Value="SelectedTask.Position!.X"
+                                             Label="Position X"
+                                             Placeholder="Enter position X"
+                                             HelperText="The X position of the task"
+                                             Variant="Variant.Filled" />
+                        </MudItem>
+
+                        <MudItem xs="6">
+                            <MudNumericField @bind-Value="SelectedTask.Position!.Y"
+                                             Label="Position Y"
+                                             Placeholder="Enter position Y"
+                                             HelperText="The Y position of the task"
+                                             Variant="Variant.Filled" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <!-- ================= EXECUTION ================= -->
+                <MudTabPanel Text="Execution" Icon="@Icons.Material.Filled.PlayArrow">
+                    <MudGrid Spacing="3">
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="SelectedTask.Type"
+                                          Label="Task Type"
+                                          Placeholder="Enter task type"
+                                          Required
+                                          Variant="Variant.Filled"
+                                          HelperText="e.g. FlowSynx.Storage.Local:1.1.0" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="SelectedTask.Execution.Operation"
+                                          Label="Operation"
+                                          Placeholder="Enter operation"
+                                          HelperText="The operation to perform"
+                                          Required Variant="Variant.Filled" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField @bind-Value="SelectedTask.Execution.TimeoutMilliseconds"
+                                             Label="Timeout (ms)"
+                                             Placeholder="Enter timeout in milliseconds"
+                                             HelperText="The maximum time to wait for execution"
+                                             Variant="Variant.Filled" />
+                        </MudItem>
+
+                        <!-- Specifications -->
+                        <MudItem xs="12">
+                            <MudPaper Outlined="true" Class="pa-4 rounded-lg">
+                                <MudText Typo="Typo.h6">Specifications</MudText>
+
+                                @foreach (var p in SelectedTask.Execution.Specification)
+                                {
+                                    <MudStack Row Spacing="2" Class="mb-2">
+                                        <MudTextField Margin="Margin.Dense" Variant="Variant.Filled" Value="@p.Key" Disabled />
+                                        <MudTextField Margin="Margin.Dense" Variant="Variant.Filled" Value="@($"{p.Value}")" Disabled />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Color="Color.Error"
+                                                       OnClick="@(() => RemoveSpec(p.Key))" />
+                                    </MudStack>
+                                }
+
+                                <MudStack Row Spacing="2">
+                                    <MudTextField @bind-Value="_newSpecKey" Margin="Margin.Dense" Variant="Variant.Filled" Label="Key" />
+                                    <MudTextField @bind-Value="_newSpecValue" Margin="Margin.Dense" Variant="Variant.Filled" Label="Value" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddSpec" />
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+
+                        <!-- Parameters -->
+                        <MudItem xs="12">
+                            <MudPaper Outlined="true" Class="pa-4 rounded-lg">
+                                <MudText Typo="Typo.h6">Parameters</MudText>
+
+                                @foreach (var p in SelectedTask.Execution.Parameters)
+                                {
+                                    <MudStack Row Spacing="2" Class="mb-2">
+                                        <MudTextField Margin="Margin.Dense" Variant="Variant.Filled" Label="Key" Value="@p.Key" Disabled />
+                                        <MudTextField Margin="Margin.Dense" Variant="Variant.Filled" Label="Value" Value="@($"{p.Value}")" Disabled />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Color="Color.Error"
+                                                       OnClick="@(() => RemoveParam(p.Key))" />
+                                    </MudStack>
+                                }
+
+                                <MudStack Row Spacing="2">
+                                    <MudTextField Margin="Margin.Dense" Variant="Variant.Filled" @bind-Value="_newParamKey" Label="Key" />
+                                    <MudTextField Margin="Margin.Dense" Variant="Variant.Filled" @bind-Value="_newParamValue" Label="Value" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddParam" />
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <!-- ================= AI AGENT ================= -->
+                <MudTabPanel Text="AI Agent" Icon="@Icons.Material.Filled.AutoAwesome">
+                    @if (SelectedTask?.Execution?.Agent != null)
                     {
-                        <MudText>No parameters defined</MudText>
+                        <MudSwitch @bind-Value="SelectedTask.Execution.Agent.Enabled"
+                                   Label="Enable AI Agent"
+                                   Color="Color.Primary" />
+
+                        <MudGrid Spacing="2" Class="mt-2">
+
+                            <!-- ================= BASIC CONFIG ================= -->
+                            <MudItem xs="6">
+                                <MudSelect T="string"
+                                           @bind-Value="SelectedTask.Execution.Agent.Mode"
+                                           Label="Mode"
+                                           Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                           HelperText="How the agent behaves"
+                                           Variant="Variant.Filled">
+                                    <MudSelectItem Value="@("execute")" /> 
+                                    <MudSelectItem Value="@("plan")" /> 
+                                    <MudSelectItem Value="@("validate")" /> 
+                                    <MudSelectItem Value="@("assist")" />
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudNumericField T="int"
+                                                 @bind-Value="SelectedTask.Execution.Agent.MaxIterations"
+                                                 Variant="Variant.Filled"
+                                                 Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                                 Label="Max Iterations"
+                                                 HelperText="Maximum reasoning iterations" />
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudNumericField T="double"
+                                                 @bind-Value="SelectedTask.Execution.Agent.Temperature"
+                                                 Variant="Variant.Filled"
+                                                 Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                                 Label="Temperature"
+                                                 Min="0"
+                                                 Max="1"
+                                                 Step="0.1"
+                                                 HelperText="Lower = deterministic, Higher = creative" />
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudSelect T="string"
+                                           @bind-Value="SelectedTask.Execution.Agent.ToolSelection"
+                                           Variant="Variant.Filled"
+                                           Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                           Label="Tool Selection"
+                                           HelperText="How tools are selected">
+                                    <MudSelectItem Value="@("auto")" />
+                                    <MudSelectItem Value="@("required")" />
+                                    <MudSelectItem Value="@("none")" />
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="SelectedTask.Execution.Agent.Instructions"
+                                              Label="Instructions"
+                                              Variant="Variant.Filled"
+                                              Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                              Lines="3"
+                                              HelperText="Custom system instructions for the agent" />
+                            </MudItem>
+
+                            <!-- ================= TOOL GOVERNANCE ================= -->
+                            <MudItem xs="12">
+                                <MudDivider Class="my-2" />
+                                <MudText Typo="Typo.h6">Tool Governance</MudText>
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudNumericField T="int"
+                                                 @bind-Value="SelectedTask.Execution.Agent.MaxToolCalls"
+                                                 Variant="Variant.Filled"
+                                                 Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                                 Label="Max Tool Calls"
+                                                 HelperText="Limit total tool invocations" />
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudSwitch @bind-Value="SelectedTask.Execution.Agent.RequireToolApproval"
+                                           Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                           Color="Color.Primary"
+                                           Label="Require Tool Approval" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudSwitch @bind-Value="SelectedTask.Execution.Agent.DryRun"
+                                           Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                           Color="Color.Warning"
+                                           Label="Dry Run (No Side Effects)" />
+                            </MudItem>
+
+                            <!-- ================= TOOL FILTERING ================= -->
+                            <MudItem xs="12">
+                                <MudDivider Class="my-2" />
+                                <MudText Typo="Typo.h6">Tool Filtering</MudText>
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudSelect T="string"
+                                           MultiSelection="true"
+                                           SelectAll="true"
+                                           @bind-SelectedValues="SelectedTask.Execution.Agent.AllowTools"
+                                           Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                           Label="Allowed Tools"
+                                           Placeholder="Select allowed tools"
+                                           HelperText="These tools are allowed"
+                                           Variant="Variant.Filled">
+                                    @foreach (var tool in ToolRegistry.GetAll())
+                                    {
+                                        <MudSelectItem Value="@tool.Name">
+                                            <MudText Typo="Typo.body1">@tool.Name</MudText>
+                                            <MudText Typo="Typo.caption">@tool.Description</MudText>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudSelect T="string"
+                                           MultiSelection="true"
+                                           SelectAll="true"
+                                           @bind-SelectedValues="SelectedTask.Execution.Agent.DenyTools"
+                                           Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                           Label="Denied Tools"
+                                           Placeholder="Select denied tools"
+                                           HelperText="These tools are denied"
+                                           Variant="Variant.Filled">
+                                    @foreach (var tool in ToolRegistry.GetAll())
+                                    {
+                                        <MudSelectItem Value="@tool.Name">
+                                            <MudText Typo="Typo.body1">@tool.Name</MudText>
+                                            <MudText Typo="Typo.caption">@tool.Description</MudText>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            <!-- ================= CONTEXT ================= -->
+                            <MudItem xs="12">
+                                <MudDivider Class="my-2" />
+                                <MudText Typo="Typo.h6">Execution Context</MudText>
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="AgentContextJson"
+                                              Variant="Variant.Filled"
+                                              Disabled="!SelectedTask.Execution.Agent.Enabled"
+                                              Label="Context (JSON)"
+                                              Lines="5"
+                                              HelperText="Additional structured context passed to the agent" />
+                            </MudItem>
+
+                        </MudGrid>
+                    }
+                </MudTabPanel>
+
+                <!-- ================= FLOW CONTROL ================= -->
+                <MudTabPanel Text="Flow Control" Icon="@Icons.Material.Filled.ControlCamera">
+                    <MudGrid Spacing="3">
+
+                        <!-- ================= DEPENDENCIES ================= -->
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Dependencies"
+                                          Label="Dependencies (comma separated)"
+                                          Variant="Variant.Filled"
+                                          Placeholder="taskA, taskB"
+                                          HelperText="Tasks that must complete successfully before this task runs"
+                                          OnBlur="UpdateDepsFromText" />
+                        </MudItem>
+
+                        <!-- ================= RUN ON FAILURE ================= -->
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="RunOnFailure"
+                                          Label="Run On Failure Of (comma separated)"
+                                          Variant="Variant.Filled"
+                                          Placeholder="taskX, taskY"
+                                          HelperText="Execute this task only if these tasks fail"
+                                          OnBlur="UpdateRunOnFailureFromText" />
+                        </MudItem>
+
+                        <!-- ================= EXECUTION CONDITION ================= -->
+                        <MudItem xs="12">
+                            <MudDivider />
+                            <MudText Typo="Typo.h6">Execution Condition</MudText>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="SelectedTask.FlowControl.ExecutionCondition!.Expression"
+                                          Label="Condition Expression"
+                                          Variant="Variant.Filled"
+                                          Placeholder="$[Variables('Stats').Errors > 0"
+                                          HelperText="Boolean expression evaluated before execution" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="SelectedTask.FlowControl.ExecutionCondition!.Description"
+                                          Label="Condition Description"
+                                          Variant="Variant.Filled"
+                                          Placeholder="Optional description"
+                                          HelperText="Human-readable explanation of the condition" />
+                        </MudItem>
+
+                        <!-- ================= CONDITIONAL BRANCHES ================= -->
+                        <MudItem xs="12">
+                            <MudDivider />
+                            <MudText Typo="Typo.h6">Conditional Branches</MudText>
+                        </MudItem>
+
+                        @foreach (var branch in SelectedTask.FlowControl.ConditionalBranches)
+                        {
+                            <MudItem xs="12">
+                                <MudCard Variant="Variant.Outlined">
+                                    <MudCardContent>
+                                        <MudGrid Spacing="2">
+
+                                            <MudItem xs="12" sm="4">
+                                                <MudTextField @bind-Value="branch.Expression"
+                                                              Label="Branch Condition"
+                                                              Variant="Variant.Filled"
+                                                              Placeholder="$[!Contains(Outputs('A').Content,'deprecated')]"
+                                                              HelperText="Condition that triggers this branch" />
+                                            </MudItem>
+
+                                            <MudItem xs="12" sm="4">
+                                                <MudTextField @bind-Value="branch.TargetTaskName"
+                                                              Label="Target Task"
+                                                              Variant="Variant.Filled"
+                                                              Placeholder="nextTask"
+                                                              HelperText="Task to execute if condition matches" />
+                                            </MudItem>
+
+                                            <MudItem xs="12" sm="4">
+                                                <MudTextField @bind-Value="branch.Description"
+                                                              Label="Description"
+                                                              Variant="Variant.Filled"
+                                                              Placeholder="Optional"
+                                                              HelperText="Branch explanation" />
+                                            </MudItem>
+
+                                            <MudItem xs="12">
+                                                <MudButton Color="Color.Error"
+                                                           Variant="Variant.Text"
+                                                           StartIcon="@Icons.Material.Filled.Delete"
+                                                           OnClick="@(() => RemoveBranch(branch))">
+                                                    Remove Branch
+                                                </MudButton>
+                                            </MudItem>
+
+                                        </MudGrid>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+                        }
+
+                        <MudItem xs="12">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       OnClick="AddBranch">
+                                Add Conditional Branch
+                            </MudButton>
+                        </MudItem>
+
+                    </MudGrid>
+                </MudTabPanel>
+
+                <!-- ================= MANUAL APPROVAL ================= -->
+                <MudTabPanel Text="Manual Approval" Icon="@Icons.Material.Filled.Person">
+                    <MudSwitch @bind-Value="SelectedTask.ManualApproval!.Enabled"
+                                Color="Color.Primary"
+                                Label="Require Manual Approval" />
+
+                    <MudTextField @bind-Value="SelectedTask.ManualApproval.Comment"
+                                    Variant="Variant.Filled"
+                                    Label="Approval Comment"
+                                    Placeholder="Enter comment for approver"
+                                    HelperText="Comment to display to the approver"
+                                    Disabled="!SelectedTask.ManualApproval.Enabled"
+                                    Lines="2" />
+                </MudTabPanel>
+
+                <!-- ================= ERROR HANDLING ================= -->
+                <MudTabPanel Text="Error Handling" Icon="@Icons.Material.Filled.WarningAmber">
+                    <MudGrid Spacing="3">
+                        @if (SelectedTask?.ErrorHandling != null) {
+                            <MudItem xs="6">
+                                <MudSelect @bind-Value="SelectedTask.ErrorHandling.Strategy"
+                                           Variant="Variant.Filled"
+                                           Placeholder="Select error strategy"
+                                           HelperText="Select the strategy to handle errors"
+                                           Label="Error Strategy">
+                                    @foreach (var strategy in Enum.GetValues<ErrorStrategy>())
+                                    {
+                                        <MudSelectItem Value="@strategy.ToString().ToLower()">
+                                            @strategy
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            @if (SelectedTask?.ErrorHandling?.Strategy?.ToLower() == "triggertask")
+                            {
+                                <MudItem xs="6">
+                                    <MudTextField @bind-Value="SelectedTask?.ErrorHandling?.TriggerPolicy!.TaskName"
+                                                  Label="Trigger Task Name"
+                                                  Placeholder="Enter task name to trigger"
+                                                  HelperText="The name of the task to trigger on error"
+                                                  Variant="Variant.Filled" />
+                                </MudItem>
+                            }
+                        }
+                    </MudGrid>
+                </MudTabPanel>
+
+                <!-- ================= RETRY POLICY ================= -->
+                <MudTabPanel Text="Retry Policy" Icon="@Icons.Material.Filled.Refresh">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="6">
+                            <MudNumericField @bind-Value="SelectedTask.ErrorHandling.RetryPolicy.MaxRetries"
+                                             Variant="Variant.Filled"
+                                             Placeholder="Enter max retries"
+                                             HelperText="The maximum number of retry attempts"
+                                             Label="Max Retries" />
+                        </MudItem>
+
+                        <MudItem xs="6">
+                            <MudSelect @bind-Value="SelectedTask?.ErrorHandling?.RetryPolicy?.BackoffStrategy"
+                                       Variant="Variant.Filled"
+                                       Placeholder="Select backoff strategy"
+                                       HelperText="The backoff strategy for retries"
+                                       Label="Backoff Strategy">
+                                @foreach (var strategy in Enum.GetValues<BackoffStrategy>())
+                                {
+                                    <MudSelectItem Value="@strategy.ToString().ToLower()">
+                                        @strategy
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+
+                        <MudItem xs="6">
+                            <MudNumericField @bind-Value="SelectedTask.ErrorHandling.RetryPolicy.InitialDelayMilliseconds"
+                                             Variant="Variant.Filled"
+                                             Placeholder="Enter initial delay (ms)"
+                                             HelperText="The initial delay before the first retry"
+                                             Label="Initial Delay (ms)" />
+                        </MudItem>
+
+                        <MudItem xs="6">
+                            <MudNumericField @bind-Value="SelectedTask.ErrorHandling.RetryPolicy.MaxDelayMilliseconds"
+                                             Variant="Variant.Filled"
+                                             Placeholder="Enter max delay (ms)"
+                                             HelperText="The maximum delay between retries"
+                                             Label="Max Delay (ms)" />
+                        </MudItem>
+
+                        <MudItem xs="6">
+                        <MudNumericField T="double"
+                                         @bind-Value="SelectedTask.ErrorHandling.RetryPolicy!.BackoffCoefficient"
+                                         Label="Backoff Coefficient"
+                                         Variant="Variant.Filled"
+                                         Placeholder="Enter backoff coefficient"
+                                         Margin="Margin.Dense"
+                                         HelperText="Backoff coefficient for retry delays" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+            </MudTabs>
+
+            <MudCardActions Class="py-4 d-flex justify-end gap-3 dialog-fixed-footer">
+                <MudButton Variant="Variant.Text" 
+                            Disabled="@IsProcessing" 
+                            OnClick="Cancel">
+                            Cancel
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@IsProcessing"
+                           OnClick="SaveAndClose"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Indeterminate Size="Size.Small" Class="mr-2" />
+                        <span>Saving…</span>
                     }
                     else
                     {
-                        @foreach (var kv in SelectedTask.Execution.Parameters.ToList())
-                        {
-                            <MudGrid Class="mb-2">
-                                <MudItem xs="4">
-                                    <MudTextField Value="@kv.Key" Disabled="true" />
-                                </MudItem>
-                                <MudItem xs="7">
-                                    <MudTextField T="string"
-                                                  Value="@kv.Value?.ToString()"
-                                                  ValueChanged="@(v => SetParam(kv.Key, v))" />
-                                </MudItem>
-                                <MudItem xs="1">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                   Variant="Variant.Filled"
-                                                   Color="Color.Error"
-                                                   Size="Size.Small"
-                                                   OnClick="@(() => RemoveParam(kv.Key))"></MudIconButton>
-                                </MudItem>
-                            </MudGrid>
-                        }
+                        <span>Save</span>
                     }
+                </MudButton>
+            </MudCardActions>
 
-                    <MudGrid>
-                        <MudItem xs="4">
-                            <MudTextField @bind-Value="_newKey" Placeholder="Key" />
-                        </MudItem>
-                        <MudItem xs="7">
-                            <MudTextField @bind-Value="_newValue" Placeholder="Value" />
-                        </MudItem>
-                        <MudItem xs="1">
-                            <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                           Size="Size.Small"
-                                           Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           OnClick="AddParam" />
-                        </MudItem>
-                    </MudGrid>
-                </MudItem>
-            </MudGrid>
-        }
-        else
-        {
-            <MudText>No selection</MudText>
-        }
+        </MudCard>
     </DialogContent>
-
-    <DialogActions>
-        <MudButton DisableElevation Variant="Variant.Outlined"
-                   StartIcon="@Icons.Material.Filled.Close"
-                   Color="Color.Default"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="Cancel">Cancel</MudButton>
-
-        <MudButton DisableElevation Variant="Variant.Filled"
-                   StartIcon="@Icons.Material.Filled.Save"
-                   Color="Color.Primary"
-                   Disabled="@IsProcessing"
-                   Size="Size.Small"
-                   OnClick="SaveAndClose">@(IsProcessing ? "Saving..." : "Save")</MudButton>
-    </DialogActions>
 </MudDialog>
 
 @code {
@@ -113,14 +551,85 @@
     [Parameter] public WorkflowTask SelectedTask { get; set; } = default!;
     [Parameter] public EventCallback OnUpdated { get; set; } = default!;
 
-    private string dependencies;
-    private string _newKey;
-    private string _newValue;
+    private string _newSpecKey;
+    private string _newSpecValue;
+    private string _newParamKey;
+    private string _newParamValue;
     private bool IsProcessing = false;
+
+    private string Dependencies
+    {
+        get => string.Join(", ", SelectedTask.FlowControl.Dependencies);
+        set { }
+    }
+
+    private string RunOnFailure
+    {
+        get => string.Join(", ", SelectedTask.FlowControl.RunOnFailureOf);
+        set { }
+    }
+
+    private void UpdateDepsFromText(FocusEventArgs _)
+    {
+        SelectedTask.FlowControl.Dependencies =
+            Dependencies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+    }
+
+    private void UpdateRunOnFailureFromText(FocusEventArgs _)
+    {
+        SelectedTask.FlowControl.RunOnFailureOf =
+            RunOnFailure.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+    }
 
     protected override void OnInitialized()
     {
-        dependencies = SelectedTask != null ? string.Join(',', SelectedTask.FlowControl.Dependencies) : string.Empty;
+        SelectedTask.Position ??= new WorkflowTaskPosition(0, 0);
+
+        // Execution
+        SelectedTask.Execution.Agent ??= new AgentConfiguration
+        {
+            Context = new(),
+            AllowTools = new List<string>(),
+            DenyTools = new List<string>()
+        };
+
+        // Flow control
+        SelectedTask.FlowControl.ExecutionCondition ??= new Condition
+        {
+            Expression = string.Empty
+        };
+
+        // Error handling
+        SelectedTask.ErrorHandling ??= new ErrorHandling()
+        {
+            Strategy = ErrorStrategy.Abort.ToString().ToLower()
+        };
+
+        SelectedTask.ErrorHandling.RetryPolicy ??= new RetryPolicy();
+
+        SelectedTask.ErrorHandling.TriggerPolicy ??= new TriggerPolicy
+        {
+            TaskName = string.Empty
+        };
+
+        if (!string.IsNullOrWhiteSpace(SelectedTask.ErrorHandling.Strategy))
+        {
+            SelectedTask.ErrorHandling.Strategy = SelectedTask.ErrorHandling.Strategy.ToLower();
+        }
+
+        if (!string.IsNullOrWhiteSpace(SelectedTask.ErrorHandling!.RetryPolicy!.BackoffStrategy))
+        {
+            SelectedTask.ErrorHandling!.RetryPolicy!.BackoffStrategy = SelectedTask.ErrorHandling!.RetryPolicy!.BackoffStrategy.ToLower();
+        }
+
+        // Manual approval
+        SelectedTask.ManualApproval ??= new ManualApproval()
+        {
+            Enabled = false,
+            Comment = string.Empty
+        };
+
+        Dependencies = SelectedTask != null ? string.Join(',', SelectedTask.FlowControl.Dependencies) : string.Empty;
     }
 
     private void Cancel()
@@ -128,11 +637,20 @@
         MudDialog.Cancel();
     }
 
-    private void UpdateDepsFromText() =>
-        SelectedTask.FlowControl.Dependencies = dependencies?.Split(',')
-            .Select(s => s.Trim())
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .ToList() ?? new();
+    private void SetSpec(string key, string value) => SelectedTask.Execution.Specification[key] = value;
+
+    private void RemoveSpec(string key) => SelectedTask.Execution.Specification.Remove(key);
+    
+    private void AddSpec()
+    {
+        IsProcessing = true;
+        if (!string.IsNullOrWhiteSpace(_newSpecKey))
+        {
+            SelectedTask.Execution.Specification[_newSpecKey] = _newSpecValue;
+            _newSpecKey = _newSpecValue = null;
+        }
+        IsProcessing = false;
+    }
 
     private void SetParam(string key, string value) => SelectedTask.Execution.Parameters[key] = value;
 
@@ -141,10 +659,10 @@
     private void AddParam()
     {
         IsProcessing = true;
-        if (!string.IsNullOrWhiteSpace(_newKey))
+        if (!string.IsNullOrWhiteSpace(_newParamKey))
         {
-            SelectedTask.Execution.Parameters[_newKey] = _newValue;
-            _newKey = _newValue = null;
+            SelectedTask.Execution.Parameters[_newParamKey] = _newParamValue;
+            _newParamKey = _newParamValue = null;
         }
         IsProcessing = false;
     }
@@ -153,5 +671,53 @@
     {
         await OnUpdated.InvokeAsync();
         MudDialog.Close();
+    }
+
+    private string AgentContextJson
+    {
+        get => JsonSerializer.Serialize(
+            SelectedTask?.Execution?.Agent?.Context ?? new(),
+            new JsonSerializerOptions { WriteIndented = true });
+
+        set
+        {
+            try
+            {
+                SelectedTask.Execution.Agent.Context =
+                    JsonSerializer.Deserialize<Dictionary<string, object>>(value) ?? new();
+            }
+            catch
+            {
+                // Optional: show validation error
+            }
+        }
+    }
+
+    private void AddBranch()
+    {
+        SelectedTask.FlowControl.ConditionalBranches.Add(new ConditionalBranch());
+    }
+
+    private void RemoveBranch(ConditionalBranch branch)
+    {
+        SelectedTask.FlowControl.ConditionalBranches.Remove(branch);
+    }
+
+    private List<string> AvailableTools => ToolRegistry.GetAll().Select(t => t.Name).OrderBy(x => x).ToList();
+
+    public enum ErrorStrategy
+    {
+        Retry,
+        Skip,
+        Abort,
+        TriggerTask
+    }
+
+    public enum BackoffStrategy
+    {
+        Fixed,
+        Linear,
+        Exponential,
+        Jitter
     }
 }

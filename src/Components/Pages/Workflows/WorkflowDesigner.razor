@@ -56,7 +56,7 @@
                                  Variant="Variant.Outlined"
                                  Size="Size.Large"
                                  Icon="@Icons.Material.Filled.Info"
-                                 OnClick="() => ShowPropertiesDialog(SelectedTask)">
+                                 OnClick="async () => await ShowPropertiesDialog(SelectedTask)">
                             Selected Task: <b>@SelectedTask.Name</b>
                         </MudChip>
                     </MudTooltip>
@@ -90,6 +90,7 @@
     private string _newValue;
     private DotNetObjectReference<WorkflowDesigner> _selfRef;
     private bool IsPaletteVisible = false;
+    private bool _isPropertiesOpen;
 
     private void TogglePalette()
     {
@@ -203,9 +204,19 @@
     private Task UpdateNodeTitle() =>
         SelectedTask != null ? JSRuntime.InvokeVoidAsync("fsDrawflow.updateNodeTitle", SelectedTask.NodeId, SelectedTask.Name, SelectedTask.Type).AsTask() : Task.CompletedTask;
 
-    private async void ShowPropertiesDialog(WorkflowTask task)
+    private async Task ShowPropertiesDialog(WorkflowTask task)
     {
-        var options = new DialogOptions
+        if (task is null)
+            return;
+
+        if (_isPropertiesOpen)
+            return;
+
+        _isPropertiesOpen = true;
+
+        try
+        {
+            var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
@@ -214,7 +225,7 @@
                 BackgroundClass = "blur-dialog-background"
             };
 
-        var parameters = new DialogParameters
+            var parameters = new DialogParameters
             {
                 ["SelectedTask"] = task,
                 ["OnUpdated"] = EventCallback.Factory.Create(this, async () =>
@@ -224,7 +235,15 @@
                 })
             };
 
-        await DialogService.ShowAsync<WorkflowNodeProperties>("Properties", parameters, options);
+            var dialogRef = await DialogService.ShowAsync<WorkflowNodeProperties>("Properties", parameters, options);
+
+            // Await the dialog close before allowing another to open
+            await dialogRef.Result;
+        }
+        finally
+        {
+            _isPropertiesOpen = false;
+        }
     }
 
     private void UpdateDepsFromText() =>
@@ -286,7 +305,7 @@
         if (task != null)
         {
             SelectedTask = task;
-            ShowPropertiesDialog(task);
+            return ShowPropertiesDialog(task);
         }
         return Task.CompletedTask;
     }
@@ -298,7 +317,7 @@
         if (task != null)
         {
             SelectedTask = task;
-            ShowPropertiesDialog(task);
+            return ShowPropertiesDialog(task);
         }
         return Task.CompletedTask;
     }

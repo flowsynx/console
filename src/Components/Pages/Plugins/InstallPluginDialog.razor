@@ -11,6 +11,13 @@
            DisableBackdropClick="@IsProcessing"
            CloseOnEscapeKey="false">
 
+    <TitleContent>
+        <MudText Typo="Typo.h6">Install Plugin</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Install the plugin into the system
+        </MudText>
+    </TitleContent>
+
     <DialogContent>
 
         <MudCard Elevation="0" Class="rounded-xl">
@@ -29,7 +36,8 @@
                               Margin="Margin.Dense"
                               Required="true"
                               Disabled="@IsProcessing"
-                              Clearable="true" />
+                              Clearable="true"
+                              HelperText="Plugin type to install in format 'PluginName:Version'" />
             </MudCardContent>
 
             <!-- Footer -->

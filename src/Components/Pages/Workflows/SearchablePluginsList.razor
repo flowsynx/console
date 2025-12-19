@@ -10,14 +10,15 @@
     <MudStack Spacing="2">
         <!-- Search -->
         <MudTextField @bind-Value="_search"
+                      Label="Search"
                       Placeholder="Search by plugin or version"
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
                       Immediate="true"
                       DebounceInterval="200"
                       Clearable="true"
-                      Variant="Variant.Outlined"
-                      Class="rounded-xl" />
+                      Variant="Variant.Filled"
+                      Class="rounded-xl mb-4" />
 
         <!-- Loading state -->
         @if (_loading)

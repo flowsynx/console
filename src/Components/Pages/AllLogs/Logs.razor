@@ -18,14 +18,13 @@
     IconColor="Color.Primary"
     IconSize="Size.Large" />
 
-<MudPaper Class="px-4 pb-4 mb-4 filter-box">
+<MudPaper Class="px-5 py-5 pb-4 mb-4 filter-box">
     <MudForm>
         <MudGrid>
             <MudItem xs="12" sm="6" md="12">
                 <MudTextField @bind-Value="LogsListRequest.Message"
                               Label="Message contains..."
-                              Variant="Variant.Text"
-                              Margin="Margin.Dense"
+                              Variant="Variant.Filled"
                               HelperText="Filter logs by message content" />
             </MudItem>
 
@@ -34,8 +33,7 @@
                            For="@(() => LogsListRequest.Level)"
                            @bind-Value="LogsListRequest.Level"
                            Label="Level"
-                           Variant="Variant.Text"
-                           Dense="true"
+                           Variant="Variant.Filled"
                            OpenIcon="@Icons.Material.Filled.ArrowDropDown"
                            CloseIcon="@Icons.Material.Filled.ArrowDropUp"
                            HelperText="Select the log level to filter (e.g., Info, Warn)">
@@ -49,17 +47,15 @@
             <MudItem xs="12" sm="6" md="4">
                 <MudDatePicker @bind-Date="LogsListRequest.FromDate"
                                Label="From date"
-                               Variant="Variant.Text"
-                               HelperText="Show logs starting from this date"
-                               Margin="Margin.Dense" />
+                               Variant="Variant.Filled"
+                               HelperText="Show logs starting from this date" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="4">
                 <MudDatePicker @bind-Date="LogsListRequest.ToDate"
                                Label="To date"
-                               Variant="Variant.Text"
-                               HelperText="Show logs up to this date"
-                               Margin="Margin.Dense" />
+                               Variant="Variant.Filled"
+                               HelperText="Show logs up to this date" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="6">

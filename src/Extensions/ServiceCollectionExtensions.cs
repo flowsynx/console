@@ -22,7 +22,8 @@ public static class ServiceCollectionExtensions
             .AddTransient<IWorkflowService, WorkflowService>()
             .AddScoped<BreadcrumbService>()
             .AddHttpContextAccessor()
-            .AddScoped<IAccessTokenProvider, ServerAccessTokenProvider>();
+            .AddScoped<IAccessTokenProvider, ServerAccessTokenProvider>()
+            .AddScoped<IToolRegistry, ToolRegistry>();
 
     public static IServiceCollection AddFlowSynxClientService(
         this IServiceCollection services,
