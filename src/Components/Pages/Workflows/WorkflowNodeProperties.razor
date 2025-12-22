@@ -1,4 +1,5 @@
-﻿@using MudBlazor
+﻿@using Console.Models
+@using MudBlazor
 @using System.Text.Json
 @inject IToolRegistry ToolRegistry
 
@@ -256,7 +257,7 @@
                                            Placeholder="Select allowed tools"
                                            HelperText="These tools are allowed"
                                            Variant="Variant.Filled">
-                                    @foreach (var tool in ToolRegistry.GetAll())
+                                    @foreach (var tool in AvailableTools)
                                     {
                                         <MudSelectItem Value="@tool.Name">
                                             <MudText Typo="Typo.body1">@tool.Name</MudText>
@@ -276,7 +277,7 @@
                                            Placeholder="Select denied tools"
                                            HelperText="These tools are denied"
                                            Variant="Variant.Filled">
-                                    @foreach (var tool in ToolRegistry.GetAll())
+                                    @foreach (var tool in AvailableTools)
                                     {
                                         <MudSelectItem Value="@tool.Name">
                                             <MudText Typo="Typo.body1">@tool.Name</MudText>
@@ -556,6 +557,7 @@
     private string _newParamKey;
     private string _newParamValue;
     private bool IsProcessing = false;
+    private List<ToolDescriptor> AvailableTools = new();
 
     private string Dependencies
     {
@@ -581,7 +583,7 @@
             RunOnFailure.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         SelectedTask.Position ??= new WorkflowTaskPosition(0, 0);
 
@@ -630,6 +632,8 @@
         };
 
         Dependencies = SelectedTask != null ? string.Join(',', SelectedTask.FlowControl.Dependencies) : string.Empty;
+
+        AvailableTools = await GetAvailableToolsAsync();
     }
 
     private void Cancel()
@@ -703,7 +707,11 @@
         SelectedTask.FlowControl.ConditionalBranches.Remove(branch);
     }
 
-    private List<string> AvailableTools => ToolRegistry.GetAll().Select(t => t.Name).OrderBy(x => x).ToList();
+    private async Task<List<ToolDescriptor>> GetAvailableToolsAsync()
+    {
+        var result = await ToolRegistry.GetAll(CancellationToken.None);
+        return result.OrderBy(x => x.Name).ToList();
+    }
 
     public enum ErrorStrategy
     {

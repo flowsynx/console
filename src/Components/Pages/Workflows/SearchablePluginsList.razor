@@ -138,13 +138,13 @@
             FlowSynxClient.SetAuthenticationStrategy(
                 new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token));
 
-            var request = new FlowSynx.Client.Messages.Requests.Plugins.PluginsListRequest
+            var request = new FlowSynx.Client.Messages.Requests.Plugins.PluginsFullDetailsListRequest
             {
                 Page = 1,
                 PageSize = int.MaxValue
             };
 
-            var result = await FlowSynxClient.Plugins.ListAsync(request, cancellationToken);
+            var result = await FlowSynxClient.Plugins.PluginsFullDetailsListAsync(request, cancellationToken);
 
             if (result.StatusCode != 200 || !result.Payload.Succeeded)
             {
@@ -158,10 +158,11 @@
                 {
                     Type = g.Key,
                     Description = g.FirstOrDefault()?.Description,
-                    Versions = g.Select(x => x.Version)
-                                .Distinct()
-                                .OrderByDescending(v => v)
-                                .ToList()
+                    Versions = g
+                        .SelectMany(x => x.Versions)
+                        .Distinct()
+                        .OrderByDescending(v => v)
+                        .ToList()
                 })
                 .ToList();
         }

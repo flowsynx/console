@@ -1,24 +1,55 @@
 ﻿using Console.Models;
+using FlowSynx.Client;
 
 namespace Console.Services;
 
 public class ToolRegistry : IToolRegistry
 {
-    private readonly List<ToolDescriptor> _tools = new()
-    {
-        new ToolDescriptor(
-            Name: "FlowSynx.Storage.Local",
-            Description: "Reads and writes files to local or mounted file systems. Supports directory traversal, file watching, and bulk file operations."
-        ),
-        new ToolDescriptor(
-            Name: "FlowSynx.Data.Json",
-            Description: "Loads and parses local JSON files. Supports transformation, extraction, and mapping of hierarchical data structures in workflows."
-        ),
-        new ToolDescriptor(
-            Name: "FlowSynx.Data.Csv",
-            Description: "Reads and writes CSV files, enabling easy batch data import/export operations and integration with spreadsheet-based data workflows."
-        )
-    };
+    private readonly IFlowSynxClient _flowSynxClient;
+    private readonly IAccessTokenProvider _tokenProvider;
+    private readonly ILogger<ToolRegistry> _logger;
 
-    public IReadOnlyCollection<ToolDescriptor> GetAll() => _tools.AsReadOnly();
+    public ToolRegistry(
+        IFlowSynxClient flowSynxClient, 
+        IAccessTokenProvider tokenProvider,
+        ILogger<ToolRegistry> logger)
+    {
+        _flowSynxClient = flowSynxClient;
+        _tokenProvider = tokenProvider;
+        _logger = logger;
+    }
+
+    public async Task<IReadOnlyCollection<ToolDescriptor>> GetAll(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var token = await _tokenProvider.GetAccessTokenAsync();
+            _flowSynxClient.SetAuthenticationStrategy(
+                new FlowSynx.Client.Authentication.BearerTokenAuthStrategy(token));
+
+            var request = new FlowSynx.Client.Messages.Requests.Plugins.PluginsFullDetailsListRequest
+            {
+                Page = 1,
+                PageSize = int.MaxValue
+            };
+
+            var result = await _flowSynxClient.Plugins.PluginsFullDetailsListAsync(request, cancellationToken);
+
+            if (result.StatusCode != 200 || !result.Payload.Succeeded)
+            {
+                _logger.LogError("Failed to load plugins");
+                return new List<ToolDescriptor>();
+            }
+
+            return result.Payload.Data
+                .GroupBy(p => p.Type)
+                .Select(g => new ToolDescriptor(g.Key, g.FirstOrDefault()?.Description))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return new List<ToolDescriptor>();
+        }
+    }
 }

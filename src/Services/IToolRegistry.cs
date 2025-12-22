@@ -4,5 +4,5 @@ namespace Console.Services;
 
 public interface IToolRegistry
 {
-    IReadOnlyCollection<ToolDescriptor> GetAll();
+    Task<IReadOnlyCollection<ToolDescriptor>> GetAll(CancellationToken cancellationToken);
 }
